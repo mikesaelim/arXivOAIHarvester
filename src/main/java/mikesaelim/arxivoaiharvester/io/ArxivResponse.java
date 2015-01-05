@@ -1,12 +1,21 @@
 package mikesaelim.arxivoaiharvester.io;
 
+import lombok.Value;
+import mikesaelim.arxivoaiharvester.data.ArticleMetadata;
+
+import java.util.List;
+
 /**
- * TODO: javadoc
+ * The information returned by a successful response from arXiv's OAI repository.
  *
- * Created by donerkebab on 1/3/15.
+ * Created by Mike Saelim on 1/3/15.
  */
+@Value
 public class ArxivResponse {
 
-    // TODO: fields
-    // TODO: Lomboking?
+    /**
+     * List of records returned by the repository.  It may be empty.
+     */
+    private List<ArticleMetadata> records;
+
 }
