@@ -1,6 +1,7 @@
 package mikesaelim.arxivoaiharvester;
 
 import mikesaelim.arxivoaiharvester.io.ArxivRequest;
+import mikesaelim.arxivoaiharvester.io.ArxivResponse;
 
 /**
  * TODO: big-ass description, javadoc on methods
@@ -9,13 +10,25 @@ import mikesaelim.arxivoaiharvester.io.ArxivRequest;
  */
 public class ArxivOAIHarvester {
 
-    // TODO: fields
+    private final ArxivRequest arxivRequest;
+    // TODO: other fields for flow control
 
     public ArxivOAIHarvester(ArxivRequest arxivRequest) {
-        // TODO: construction
+        this.arxivRequest = arxivRequest;
     }
 
-    // TODO: methods
+    public ArxivResponse getNextBatch() {
+        // TODO: implement
+        return null;
+    }
 
+    public boolean hasNextBatch() {
+        // TODO: implement
+        return false;
+    }
+
+    public ArxivRequest getArxivRequest() {
+        return arxivRequest;
+    }
 
 }

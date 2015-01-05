@@ -7,7 +7,11 @@ package mikesaelim.arxivoaiharvester.io;
  */
 public class ArxivRequest {
 
-    // TODO: fields
-    // TODO: Lomboking
+    private Verb verb;
 
+    // TODO: you know what, make this an interface
+
+    // TODO: fields
+    // TODO: Lomboking - value?  builder?
+    // TODO: getRequestURI(), getRequestHeader(), etc.?
 }
