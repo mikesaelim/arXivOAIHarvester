@@ -94,7 +94,7 @@ public class ArticleMetadata {
 
     /**
      * Proxy string.  Used only for third-party submissions: see
-     * <a href="http://arxiv.org/help/third_party_submission>the relevant arXiv help page</a>.
+     * <a href="http://arxiv.org/help/third_party_submission">the relevant arXiv help page</a>.
      */
     private String proxy;
 
