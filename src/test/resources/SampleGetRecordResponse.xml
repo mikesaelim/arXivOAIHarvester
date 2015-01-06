@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+<responseDate>2015-01-06T20:48:16Z</responseDate>
+<request verb="GetRecord" identifier="oai:arXiv.org:1302.2146" metadataPrefix="arXivRaw">http://export.arxiv.org/oai2</request>
+<GetRecord>
+<record>
+<header>
+ <identifier>oai:arXiv.org:1302.2146</identifier>
+ <datestamp>2013-04-03</datestamp>
+ <setSpec>physics:hep-ex</setSpec>
+ <setSpec>physics:hep-ph</setSpec>
+</header>
+<metadata>
+ <arXivRaw xmlns="http://arxiv.org/OAI/arXivRaw/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://arxiv.org/OAI/arXivRaw/ http://arxiv.org/OAI/arXivRaw.xsd">
+ <id>1302.2146</id><submitter>Michael Saelim</submitter><version version="v1"><date>Fri, 8 Feb 2013 21:00:01 GMT</date><size>853kb</size><source_type>D</source_type></version><version version="v2"><date>Tue, 2 Apr 2013 01:50:08 GMT</date><size>849kb</size><source_type>D</source_type></version><title>The Same-Sign Dilepton Signature of RPV/MFV SUSY</title><authors>Joshua Berger, Maxim Perelstein, Michael Saelim and Philip Tanedo</authors><categories>hep-ph hep-ex</categories><comments>18 pages, 6 figures; v2: References added</comments><license>http://arxiv.org/licenses/nonexclusive-distrib/1.0/</license><abstract>  The lack of observation of superpartners at the Large Hadron Collider so far
+has led to a renewed interest in supersymmetric models with R-parity violation
+(RPV). In particular, imposing the Minimal Flavor Violation (MFV) hypothesis on
+a general RPV model leads to a realistic and predictive framework. Naturalness
+suggests that stops and gluinos should appear at or below the TeV mass scale.
+We consider a simplified model with these two particles and MFV couplings. The
+model predicts a significant rate of events with same-sign dileptons and
+b-jets. We re-analyze a recent CMS search in this channel and show that the
+current lower bound on the gluino mass is about 800 GeV at 95% confidence
+level, with only a weak dependence on the stop mass as long as the gluino can
+decay to an on-shell top-stop pair. We also discuss how this search can be
+further optimized for the RPV/MFV scenario, using the fact that MFV stop decays
+often result in jets with large invariant mass. With the proposed improvements,
+we estimate that gluino masses of up to about 1.4 TeV can be probed at the 14
+TeV LHC with a 100 fb^-1 data set.
+</abstract></arXivRaw>
+</metadata>
+</record>
+</GetRecord>
+</OAI-PMH>

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+<responseDate>2015-01-06T20:49:59Z</responseDate>
+<request verb="ListRecords" from="2014-10-01" metadataPrefix="arXivRaw">http://export.arxiv.org/oai2</request>
+<ListRecords>
+<record>
+<header>
+ <identifier>oai:arXiv.org:0704.0471</identifier>
+ <datestamp>2014-11-18</datestamp>
+ <setSpec>physics:nucl-ex</setSpec>
+ <setSpec>physics:nucl-th</setSpec>
+</header>
+<metadata>
+ <arXivRaw xmlns="http://arxiv.org/OAI/arXivRaw/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://arxiv.org/OAI/arXivRaw/ http://arxiv.org/OAI/arXivRaw.xsd">
+ <id>0704.0471</id><submitter>Dinesh Shetty</submitter><version version="v1"><date>Tue, 3 Apr 2007 22:04:11 GMT</date><size>294kb</size></version><title>Density dependence of the symmetry energy and the nuclear equation of
+  state: A Dynamical and Statistical model perspective</title><authors>D.V. Shetty, S.J. Yennello, and G.A. Souliotis</authors><categories>nucl-ex nucl-th</categories><comments>16 pages, 14 figures</comments><journal-ref>Phys.Rev.C76:024606,2007; Erratum-ibid.C76:039902,2007</journal-ref><doi>10.1103/PhysRevC.76.024606 10.1103/PhysRevC.76.039902</doi><abstract>  The density dependence of the symmetry energy in the equation of state of
+isospin asymmetric nuclear matter is of significant importance for studying the
+structure of systems as diverse as the neutron-rich nuclei and the neutron
+stars. A number of reactions using the dynamical and the statistical models of
+multifragmentation, and the experimental isoscaling observable, is studied to
+extract information on the density dependence of the symmetry energy. It is
+observed that the dynamical and the statistical model calculations give
+consistent results assuming the sequential decay effect in dynamical model to
+be small. A comparison with several other independent studies is also made to
+obtain important constraint on the form of the density dependence of the
+symmetry energy. The comparison rules out an extremely &quot; stiff &quot; and &quot; soft &quot;
+form of the density dependence of the symmetry energy with important
+implications for astrophysical and nuclear physics studies.
+</abstract></arXivRaw>
+</metadata>
+</record>
+<record>
+<header>
+ <identifier>oai:arXiv.org:0704.0716</identifier>
+ <datestamp>2014-12-22</datestamp>
+ <setSpec>math</setSpec>
+ <setSpec>physics:math-ph</setSpec>
+</header>
+<metadata>
+ <arXivRaw xmlns="http://arxiv.org/OAI/arXivRaw/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://arxiv.org/OAI/arXivRaw/ http://arxiv.org/OAI/arXivRaw.xsd">
+ <id>0704.0716</id><submitter>Christoph Richard</submitter><version version="v1"><date>Thu, 5 Apr 2007 12:45:03 GMT</date><size>43kb</size></version><version version="v2"><date>Fri, 28 Sep 2007 15:13:43 GMT</date><size>48kb</size></version><version version="v3"><date>Fri, 29 Feb 2008 16:05:39 GMT</date><size>48kb</size></version><version version="v4"><date>Fri, 14 Nov 2008 09:07:25 GMT</date><size>49kb</size></version><title>Limit distributions and scaling functions</title><authors>Christoph Richard</authors><categories>math-ph math.MP</categories><comments>54 pages, 2 figures; v2 updated and slightly expanded; v3 changes in
+  some proofs; v4 slightly expanded</comments><msc-class>05A15, 05A16</msc-class><journal-ref>Polygons, polyominoes and polycubes, 247-299, Lecture Notes in
+  Phys., 775, Springer, Dordrecht, 2009</journal-ref><license>http://arxiv.org/licenses/nonexclusive-distrib/1.0/</license><abstract>  We discuss the asymptotic behaviour of models of lattice polygons, mainly on
+the square lattice. In particular, we focus on limiting area laws in the
+uniform perimeter ensemble where, for fixed perimeter, each polygon of a given
+area occurs with the same probability. We relate limit distributions to the
+scaling behaviour of the associated perimeter and area generating functions,
+thereby providing a geometric interpretation of scaling functions. To a major
+extent, this article is a pedagogic review of known results.
+</abstract></arXivRaw>
+</metadata>
+</record>
+<record>
+<header>
+ <identifier>oai:arXiv.org:0704.0874</identifier>
+ <datestamp>2014-11-21</datestamp>
+ <setSpec>math</setSpec>
+</header>
+<metadata>
+ <arXivRaw xmlns="http://arxiv.org/OAI/arXivRaw/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://arxiv.org/OAI/arXivRaw/ http://arxiv.org/OAI/arXivRaw.xsd">
+ <id>0704.0874</id><submitter>Gavril Farkas</submitter><version version="v1"><date>Fri, 6 Apr 2007 11:07:01 GMT</date><size>26kb</size></version><version version="v2"><date>Wed, 30 Apr 2008 17:03:55 GMT</date><size>28kb</size></version><version version="v3"><date>Thu, 20 Nov 2014 15:03:16 GMT</date><size>29kb</size></version><title>Higher ramification and varieties of secant divisors on the generic
+  curve</title><authors>Gavril Farkas</authors><categories>math.AG</categories><comments>25 pages. Numerous changes suggested by the referee, several proofs
+  explained in more detail. To appear in the Journal of the London Mathematical
+  Society</comments><msc-class>14H10, 14N10</msc-class><journal-ref>J. London Math. Soc. 78(2008) 418-440</journal-ref><license>http://arxiv.org/licenses/nonexclusive-distrib/1.0/</license><abstract>  For a smooth projective curve, the cycles of e-secant k-planes are among the
+most studied objects in classical enumerative geometry and there are well-known
+formulas due to Castelnuovo, Cayley and MacDonald concerning them. Despite
+various attempts, surprisingly little is known about the enumerative validity
+of such formulas. The aim of this paper is to completely clarify this problem
+in the case of the generic curve C of given genus. Using degeneration
+techniques and a few facts about the birational geometry of moduli spaces of
+stable pointed curves we determine precisely under which conditions the cycle
+of e-secant k-planes in non-empty and we compute its dimension. We also
+precisely determine the dimension of the variety of linear series on C carrying
+e-secant k-planes. In a different direction, in the last part of the paper we
+study the distribution of ramification points of the powers of a line bundle on
+C having prescribed ramification at a given point.
+</abstract></arXivRaw>
+</metadata>
+</record>
+<record>
+<header>
+ <identifier>oai:arXiv.org:0704.1109</identifier>
+ <datestamp>2014-11-18</datestamp>
+ <setSpec>physics:gr-qc</setSpec>
+</header>
+<metadata>
+ <arXivRaw xmlns="http://arxiv.org/OAI/arXivRaw/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://arxiv.org/OAI/arXivRaw/ http://arxiv.org/OAI/arXivRaw.xsd">
+ <id>0704.1109</id><submitter>Patricio S. Letelier</submitter><version version="v1"><date>Mon, 9 Apr 2007 14:45:43 GMT</date><size>6kb</size></version><version version="v2"><date>Tue, 29 Jan 2008 20:15:01 GMT</date><size>15kb</size></version><title>Spinning Strings, Black Holes and Stable Closed Timelike Geodesics</title><authors>Valeria M. Rosa and Patricio S. letelier</authors><categories>gr-qc</categories><comments>5 pages, RevTex4, some corrections and new material added</comments><journal-ref>Int.J.Theor.Phys.49:316-323,2010</journal-ref><doi>10.1007/s10773-009-0204-x</doi><abstract>  The existence and stability under linear perturbation of closed timelike
+curves in the spacetime associated to Schwarzschild black hole pierced by a
+spinning string are studied. Due to the superposition of the black hole, we
+find that the spinning string spacetime is deformed in such a way to allow the
+existence of closed timelike geodesics.
+</abstract></arXivRaw>
+</metadata>
+</record>
+<record>
+<header>
+ <identifier>oai:arXiv.org:0704.1114</identifier>
+ <datestamp>2014-11-18</datestamp>
+ <setSpec>physics:astro-ph</setSpec>
+</header>
+<metadata>
+ <arXivRaw xmlns="http://arxiv.org/OAI/arXivRaw/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://arxiv.org/OAI/arXivRaw/ http://arxiv.org/OAI/arXivRaw.xsd">
+ <id>0704.1114</id><submitter>Travis S. Barman</submitter><version version="v1"><date>Mon, 9 Apr 2007 20:13:36 GMT</date><size>163kb</size></version><title>Identification of Absorption Features in an Extrasolar Planet Atmosphere</title><authors>T. S. Barman</authors><categories>astro-ph</categories><comments>Accepted for publication in ApJL., in emulate ApJ format</comments><journal-ref>Astrophys.J.661:L191-L194,2007</journal-ref><doi>10.1086/518736</doi><abstract>  Water absorption is identified in the atmosphere of HD209458b by comparing
+models for the planet's transmitted spectrum to recent, multi-wavelength,
+eclipse-depth measurements (from 0.3 to 1 microns) published by Knutson et al.
+(2007). A cloud-free model which includes solar abundances, rainout of
+condensates, and photoionization of sodium and potassium is in good agreement
+with the entire set of eclipse-depth measurements from the ultraviolet to
+near-infrared. Constraints are placed on condensate removal by gravitational
+settling, the bulk metallicity, and the redistribution of absorbed stellar
+flux. Comparisons are also made to the Charbonneau et al. (2002) sodium
+measurements.
+</abstract></arXivRaw>
+</metadata>
+</record>
+<record>
+<header>
+ <identifier>oai:arXiv.org:0704.1586</identifier>
+ <datestamp>2014-11-18</datestamp>
+ <setSpec>physics:nucl-th</setSpec>
+</header>
+<metadata>
+ <arXivRaw xmlns="http://arxiv.org/OAI/arXivRaw/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://arxiv.org/OAI/arXivRaw/ http://arxiv.org/OAI/arXivRaw.xsd">
+ <id>0704.1586</id><submitter>Neil Summers</submitter><version version="v1"><date>Thu, 12 Apr 2007 14:18:58 GMT</date><size>35kb</size></version><title>Core excitation in the elastic scattering and breakup of $^{11}$Be on
+  protons</title><authors>N.C. Summers and F.M. Nunes</authors><categories>nucl-th</categories><comments>5 pages, 4 figures, submitted to Phys. Rev. C</comments><journal-ref>Phys.Rev.C76:014611,2007; Erratum-ibid..C77:049901,2008</journal-ref><doi>10.1103/PhysRevC.76.014611 10.1103/PhysRev.C77.049901</doi><abstract>  The elastic scattering and breakup of $^{11}$Be from a proton target at
+intermediate energies is studied. We explore the role of core excitation in the
+reaction mechanism. Comparison with the data suggests that there is still
+missing physics in the description.
+</abstract></arXivRaw>
+</metadata>
+</record>
+<resumptionToken cursor="0" completeListSize="58011">726959|1001</resumptionToken>
+</ListRecords>
+</OAI-PMH>
