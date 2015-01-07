@@ -44,7 +44,7 @@ import java.util.*;
  *
  * Created by Mike Saelim on 1/5/15.
  */
-public class XMLHandler extends DefaultHandler {
+class XMLHandler extends DefaultHandler {
 
     // TODO: full checking of ancestor nodes
     // TODO: handle warnings, errors, etc.
