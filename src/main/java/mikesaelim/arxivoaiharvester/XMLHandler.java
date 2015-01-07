@@ -126,6 +126,9 @@ public class XMLHandler extends DefaultHandler {
         this.responseBuilder = responseBuilder;
     }
 
+    /**
+     * Code to be executed when encountering an opening tag
+     */
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException{
         // Begin the nodeStack when we enter the OAI-PMH namespace
         if (qName.equals("OAI-PMH")) {
@@ -136,8 +139,10 @@ public class XMLHandler extends DefaultHandler {
             }
         }
 
+        // Push this node onto the nodeStack
         nodeStack.push(qName);
 
+        // Initialize containers as needed
         switch (qName) {
             case "GetRecord":
             case "ListRecords":
@@ -160,14 +165,19 @@ public class XMLHandler extends DefaultHandler {
         }
     }
 
+    /**
+     * Code to be executed when encountering a closing tag
+     */
     public void endElement(String uri, String localName, String qName) throws SAXException {
-        String lastNode = nodeStack.pop();
+        // Pull the current node off the nodeStack
+        String currentNode = nodeStack.pop();
 
         // If the closing tag doesn't match the last opening tag, throw an exception.
-        if (!qName.equals(lastNode)) {
-            throw new SAXException(getIdentifierErrorString() + "Opening tag '" + lastNode + "' does not match closing tag '" + qName + "'!");
+        if (!qName.equals(currentNode)) {
+            throw new SAXException(getIdentifierErrorString() + "Opening tag '" + currentNode + "' does not match closing tag '" + qName + "'!");
         }
 
+        // Close containers and insert them into their parent containers
         switch (qName) {
             case "GetRecord":
             case "ListRecords":
@@ -178,7 +188,9 @@ public class XMLHandler extends DefaultHandler {
                         .completeListSize(completeListSize);
                 break;
             case "record":
-                currentRecordBuilder.sets(sets).versions(versions).articleAbstract(articleAbstractBuilder.toString());
+                currentRecordBuilder.sets(sets)
+                        .versions(versions)
+                        .articleAbstract(articleAbstractBuilder.toString().trim());
                 records.add(currentRecordBuilder.build());
                 currentIdentifier = null;
                 break;
@@ -188,9 +200,11 @@ public class XMLHandler extends DefaultHandler {
         }
     }
 
+    /**
+     * Parsing the text contents between opening and closing tags
+     */
     public void characters(char[] ch, int start, int length) throws SAXException {
         String value = new String(ch, start, length);
-        System.out.println(value);
         if (value.isEmpty()) {
             return;
         }
@@ -264,11 +278,12 @@ public class XMLHandler extends DefaultHandler {
                 currentRecordBuilder.license(value);
                 break;
             case "abstract":
-                articleAbstractBuilder.append(value.trim());
+                articleAbstractBuilder.append(value.replace('\n', ' '));
                 break;
             // End record fields
         }
     }
+
 
 
     /**
