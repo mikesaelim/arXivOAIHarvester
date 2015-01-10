@@ -45,6 +45,7 @@ public class ArxivListRecordsRequest extends ArxivRequest {
         }
     }
 
+    @Override
     public URI getURI() throws URISyntaxException {
         URIBuilder uriBuilder = new URIBuilder()
                 .setScheme("http")

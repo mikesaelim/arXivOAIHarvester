@@ -129,6 +129,7 @@ class XMLHandler extends DefaultHandler {
     /**
      * Code to be executed when encountering an opening tag
      */
+    @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException{
         // Begin the nodeStack when we enter the OAI-PMH namespace
         if (qName.equals("OAI-PMH")) {
@@ -162,12 +163,16 @@ class XMLHandler extends DefaultHandler {
                 currentVersionBuilder = ArticleVersion.builder()
                         .versionNumber(parseVersionNumber(attributes));
                 break;
+            case "resumptionToken":
+                cursor = parseCursor(attributes);
+                completeListSize = parseCompleteListSize(attributes);
         }
     }
 
     /**
      * Code to be executed when encountering a closing tag
      */
+    @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
         // Pull the current node off the nodeStack
         String currentNode = nodeStack.pop();
@@ -203,6 +208,7 @@ class XMLHandler extends DefaultHandler {
     /**
      * Parsing the text contents between opening and closing tags
      */
+    @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
         String value = new String(ch, start, length);
         if (value.isEmpty()) {
@@ -212,6 +218,9 @@ class XMLHandler extends DefaultHandler {
         switch (nodeStack.peek()) {
             case "responseDate":
                 responseDate = parseResponseDate(value);
+                break;
+            case "resumptionToken":
+                resumptionToken = value;
                 break;
 
             // Begin record fields
@@ -364,6 +373,48 @@ class XMLHandler extends DefaultHandler {
             return Lists.newArrayList();
         }
         return Lists.newArrayList(value.split(" "));
+    }
+
+    /**
+     * Parse the cursor from the attributes of the "resumptionToken" node.  This attribute is not required by the OAI
+     * schema, so we do not throw an exception if we cannot find it.
+     * @param attributes "resumptionToken" node attributes
+     * @return cursor position, or null if no valid one can be found
+     */
+    @VisibleForTesting Integer parseCursor(Attributes attributes) {
+        String cursorString = attributes.getValue("cursor");
+
+        Integer cursorPosition = null;
+        if (cursorString != null) {
+            try {
+                cursorPosition = Integer.valueOf(cursorString);
+            } catch (NumberFormatException e) {
+                // Do nothing, although in the future this will be used for logging
+            }
+        }
+
+        return cursorPosition;
+    }
+
+    /**
+     * Parse the complete list size from the attributes of the "resumptionToken" node.  This attribute is not required
+     * by the OAI schema, so we do not throw an exception if we cannot find it.
+     * @param attributes "resumptionToken" node attributes
+     * @return complete list size, or null if no valid one can be found
+     */
+    @VisibleForTesting Integer parseCompleteListSize(Attributes attributes) {
+        String completeListSizeString = attributes.getValue("completeListSize");
+
+        Integer completeListSizeAmount = null;
+        if (completeListSizeString != null) {
+            try {
+                completeListSizeAmount = Integer.valueOf(completeListSizeString);
+            } catch (NumberFormatException e) {
+                // Do nothing, although in the future this will be used for logging
+            }
+        }
+
+        return completeListSizeAmount;
     }
 
     /**

@@ -120,9 +120,34 @@ public class XMLHandlerTest {
         assertTrue(categories.isEmpty());
     }
 
+    @Test
+    public void testParseCursor() throws Exception {
+        when(attributes.getValue("cursor")).thenReturn("46");
+        assertEquals(46, xmlHandler.parseCursor(attributes).intValue());
+    }
 
+    @Test
+    public void testParseCursor_BadFormatShouldReturnNull() throws Exception {
+        when(attributes.getValue("cursor")).thenReturn(null);
+        assertNull(xmlHandler.parseCursor(attributes));
 
+        when(attributes.getValue("cursor")).thenReturn("s");
+        assertNull(xmlHandler.parseCursor(attributes));
+    }
 
+    @Test
+    public void testParseCompleteListSize() throws Exception {
+        when(attributes.getValue("completeListSize")).thenReturn("24247247");
+        assertEquals(24247247, xmlHandler.parseCompleteListSize(attributes).intValue());
+    }
 
+    @Test
+    public void testParseCompleteListSize_BadFormatShouldReturnNull() throws Exception {
+        when(attributes.getValue("completeListSize")).thenReturn(null);
+        assertNull(xmlHandler.parseCompleteListSize(attributes));
+
+        when(attributes.getValue("completeListSize")).thenReturn("s");
+        assertNull(xmlHandler.parseCompleteListSize(attributes));
+    }
 
 }

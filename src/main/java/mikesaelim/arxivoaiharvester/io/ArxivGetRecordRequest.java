@@ -27,6 +27,7 @@ public class ArxivGetRecordRequest extends ArxivRequest {
         this.identifier = identifier;
     }
 
+    @Override
     public URI getURI() throws URISyntaxException {
         return new URIBuilder()
                 .setScheme("http")
