@@ -7,6 +7,7 @@ import lombok.NonNull;
 import mikesaelim.arxivoaiharvester.data.ArticleMetadata;
 import mikesaelim.arxivoaiharvester.data.ArticleVersion;
 import mikesaelim.arxivoaiharvester.io.ArxivResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -17,90 +18,97 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 
-import static org.apache.commons.lang3.StringUtils.normalizeSpace;
-
 /**
  * This is the handler used to parse the XML response of arXiv's OAI repository.  It is written to be compatible with
  * the OAI-PMH v2.0 XML schema for the verbs "GetRecord" and "ListRecords" only, with metadata in arXiv's XML schema for
  * the "arXivRaw" metadata format (the current version of that is 2014-06-24).
  *
- * This handler is meant to be used with a SAX parser like so:
+ * This handler is meant to be used with a SAXParser, which parses an InputStream and sends the information to this
+ * handler.  This handler then parses this information and stores it in a ArxivResponseBuilder.  Example:
  * <pre>{@code
- *
- *  SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
- *
- *  ArxivResponse.ArxivResponseBuilder responseBuilder = ArxivResponse.builder();
- *  try {
- *      parser.parse(inputStream, new XMLHandler(responseBuilder));
- *  } catch (Exception e) {
- *      ...
- *  }
- *
- *  ArxivResponse response = responseBuilder.build();
- *
+ *    ArxivResponse.ArxivResponseBuilder responseBuilder = ArxivResponse.builder();
+ *    try {
+ *        saxParser.parse(inputStream, new XMLHandler(responseBuilder));
+ *    } catch (Exception e) { ... }
+ *    ArxivResponse response = responseBuilder.build();
  * }</pre>
- * The inputStream gets parsed into the responseBuilder, which is used to build an immutable ArxivResponse object.
  *
- * Broad unit tests of this class's functionality are included in the unit tests of
- * {@link mikesaelim.arxivoaiharvester.ArxivOAIHarvester}.
+ * ArxivResponse, ArticleMetadata, and ArticleVersion are all immutable types, so they are constructed via builders.
+ * Additionally, we have to deal with a corrupted XML stream that contains spurious line breaks in the middle of some
+ * of the string values.  For this reason, we normalize the string values that we extract.
+ *
+ * Broad unit tests of this class's functionality are included in the unit tests of ArxivOAIHarvester.
  *
  * Created by Mike Saelim on 1/5/15.
  */
 class XMLHandler extends DefaultHandler {
 
-    // TODO: full checking of ancestor nodes
-    // TODO: handle warnings, errors, etc.
+    // TODO: handle warnings, errors, etc. from the parser
+    // TODO: handle error responses from the repository
 
     /**
-     * This is the final output of the parsing process.  It gets filled when we hit the closing "GetRecord" or
-     * "ListRecords" tag.
+     * This is the final output of the parsing process.
      */
     private ArxivResponse.ArxivResponseBuilder responseBuilder;
 
+    /*
+     *        These are the constituents of the ArxivResponse:
+     */
     /**
      * DateTime of the response.  The OAI v2.0 schema requires this to be filled before the records.
      */
     private ZonedDateTime responseDate;
-
     /**
-     * This list of records gets appended as we parse the XML document.  This is initialized while entering a
-     * "GetRecord" or "ListRecords" node.
+     * This list of records gets appended as we parse the XML document.
      */
     private List<ArticleMetadata> records;
-
     /**
-     * The identifier for the ArticleMetadata object currently being created.  This is only initialized while we are
-     * inside a "record" node and we have come across the identifier already.  Unfortunately, because of how SAX parsing
-     * works, there is no way to ensure that we will have an object's identifier even though we are parsing the object.
-     *
-     * This is basically just used for logging errors.
+     * Resumption token information.
      */
-    private String currentIdentifier;
-    /**
-     * The builder for the ArticleMetadata object currently being created.  This is initialized while entering a
-     * "record" node.
-     */
-    private ArticleMetadata.ArticleMetadataBuilder currentRecordBuilder;
-    /**
-     * The Set of setSpec values for the ArticleMetadata object currently being created.  This is initialized while
-     * entering a "record" node.
-     */
-    private Set<String> sets;
-    /**
-     * The Set of ArticleVersions for the ArticleMetadata object currently being created.  This is initialized while
-     * entering a "record" node.
-     */
-    private Set<ArticleVersion> versions;
-    /**
-     * The builder for the ArticleVersion object currently being created.  This is initialized while entering a
-     * "version" node.
-     */
-    private ArticleVersion.ArticleVersionBuilder currentVersionBuilder;
-
     private String resumptionToken;
     private Integer cursor;
     private Integer completeListSize;
 
+    /*
+     *        These are objects that get filled anew for every record the parser encounters:
+     */
+    /**
+     * The unique identifier for the record being parsed.  It is stored separately so that it can be used for logging
+     * errors.
+     */
+    private String currentIdentifier;
+    /**
+     * The ArticleMetadata builder for the record being parsed.
+     */
+    private ArticleMetadata.ArticleMetadataBuilder currentRecordBuilder;
+    /**
+     * The Set of "setSpec" values for the record being parsed.
+     */
+    private Set<String> sets;
+    /**
+     * The Set of ArticleVersions for the record being parsed.
+     */
+    private Set<ArticleVersion> versions;
+
+    /*
+     *       These are objects that get filled anew for every "version" in a record:
+     */
+    /**
+     * The builder for the ArticleVersion object currently being created.
+     */
+    private ArticleVersion.ArticleVersionBuilder currentVersionBuilder;
+
+    /*
+     *       These are objects that are used to track the current state of the parsing:
+     */
+    /**
+     * At any point of the parsing process, this is a Stack of the XML nodes we are inside - the ones we have entered
+     * but not yet exited.  When we enter a node, we push the name of that node onto the Stack, and when we leave a
+     * node, we demand that its name match the one we pop off the stack.
+     *
+     * This is only active within "OAI-PMH" tags, so the base node should be "OAI-PMH".
+     */
+    private Stack<String> nodeStack;
     /**
      * A StringBuilder used to construct the value of the current leaf node.  The resulting String will get parsed and
      * stored in the fields above.
@@ -109,19 +117,10 @@ class XMLHandler extends DefaultHandler {
      * the line breaks trigger a new invocation of the characters() method.  We deal with this corrupted XML by building
      * the value Strings "line" by "line".  Sigh.
      */
-    private StringBuilder currentValueBuilder;
-    private static final Set<String> LEAF_NODE_NAMES = Sets.newHashSet("responseDate", "resumptionToken", "identifier",
+    private StringBuilder currentLeafValueBuilder;
+    private static final Set<String> LEAF_NAMES = Sets.newHashSet("responseDate", "resumptionToken", "identifier",
             "datestamp", "setSpec", "id", "submitter", "date", "size", "source_type", "title", "authors", "categories",
             "comments", "proxy", "report-no", "acm-class", "msc-class", "journal-ref", "doi", "license", "abstract");
-
-    /**
-     * At any point of the parsing process, this is a Stack of the XML nodes we are inside - the ones we have entered
-     * but not yet exited.  When we enter a node, we push the name of that node onto the Stack, and when we leave a
-     * node, we demand that its name match the one we pop off the stack.
-     * <p/>
-     * Note: This is only active within "OAI-PMH" tags, so the base node should be "OAI-PMH".
-     */
-    private Stack<String> nodeStack;
 
 
 
@@ -173,7 +172,7 @@ class XMLHandler extends DefaultHandler {
                 completeListSize = parseCompleteListSize(attributes);
                 // The lack of a break statement here is intentional
             default:
-                currentValueBuilder = new StringBuilder();
+                currentLeafValueBuilder = new StringBuilder();
         }
     }
 
@@ -187,10 +186,11 @@ class XMLHandler extends DefaultHandler {
 
         // If the closing tag doesn't match the last opening tag, throw an exception.
         if (!qName.equals(currentNode)) {
-            throw new SAXException(getIdentifierErrorString() + "Opening tag '" + currentNode + "' does not match closing tag '" + qName + "'!");
+            throw new SAXException(getIdentifierErrorString() + "Opening tag '" + currentNode +
+                    "' does not match closing tag '" + qName + "'!");
         }
 
-        // Close containers and insert them into their parent containers
+        // Build leaf node values and close containers, and insert them into their parent containers
         switch (qName) {
             case "GetRecord":
             case "ListRecords":
@@ -201,8 +201,7 @@ class XMLHandler extends DefaultHandler {
                         .completeListSize(completeListSize);
                 break;
             case "record":
-                currentRecordBuilder.sets(sets)
-                        .versions(versions);
+                currentRecordBuilder.sets(sets).versions(versions);
                 records.add(currentRecordBuilder.build());
                 currentIdentifier = null;
                 break;
@@ -210,79 +209,79 @@ class XMLHandler extends DefaultHandler {
                 versions.add(currentVersionBuilder.build());
                 break;
 
-            // Begin leaf nodes
+            // Begin leaf nodes - their values are retrieved from getCurrentValue()
             case "responseDate":
-                responseDate = parseResponseDate(normalizeSpace(currentValueBuilder.toString()));
+                responseDate = parseResponseDate(getCurrentValue());
                 break;
             case "resumptionToken":
-                resumptionToken = normalizeSpace(currentValueBuilder.toString());
+                resumptionToken = getCurrentValue();
                 break;
 
             // Begin record fields
             case "identifier":
-                currentIdentifier = normalizeSpace(currentValueBuilder.toString());
+                currentIdentifier = getCurrentValue();
                 currentRecordBuilder.identifier(currentIdentifier);
                 break;
             case "datestamp":
-                currentRecordBuilder.datestamp(parseDatestamp(normalizeSpace(currentValueBuilder.toString())));
+                currentRecordBuilder.datestamp(parseDatestamp(getCurrentValue()));
                 break;
             case "setSpec":
-                sets.add(normalizeSpace(currentValueBuilder.toString()));
+                sets.add(getCurrentValue());
                 break;
             case "id":
-                currentRecordBuilder.id(normalizeSpace(currentValueBuilder.toString()));
+                currentRecordBuilder.id(getCurrentValue());
                 break;
             case "submitter":
-                currentRecordBuilder.submitter(normalizeSpace(currentValueBuilder.toString()));
+                currentRecordBuilder.submitter(getCurrentValue());
                 break;
 
             // Begin version fields
             case "date":
-                currentVersionBuilder.submissionTime(parseVersionDate(normalizeSpace(currentValueBuilder.toString())));
+                currentVersionBuilder.submissionTime(parseVersionDate(getCurrentValue()));
                 break;
             case "size":
-                currentVersionBuilder.size(normalizeSpace(currentValueBuilder.toString()));
+                currentVersionBuilder.size(getCurrentValue());
                 break;
             case "source_type":
-                currentVersionBuilder.sourceType(normalizeSpace(currentValueBuilder.toString()));
+                currentVersionBuilder.sourceType(getCurrentValue());
                 break;
             // End version fields
 
             case "title":
-                currentRecordBuilder.title(normalizeSpace(currentValueBuilder.toString()));
+                currentRecordBuilder.title(getCurrentValue());
                 break;
             case "authors":
-                currentRecordBuilder.authors(normalizeSpace(currentValueBuilder.toString()));
+                currentRecordBuilder.authors(getCurrentValue());
                 break;
             case "categories":
-                currentRecordBuilder.categories(parseCategories(normalizeSpace(currentValueBuilder.toString())));
+                currentRecordBuilder.categories(parseCategories(getCurrentValue()));
                 break;
             case "comments":
-                currentRecordBuilder.comments(normalizeSpace(currentValueBuilder.toString()));
+                currentRecordBuilder.comments(getCurrentValue());
                 break;
             case "proxy":
-                currentRecordBuilder.proxy(normalizeSpace(currentValueBuilder.toString()));
+                currentRecordBuilder.proxy(getCurrentValue());
                 break;
             case "report-no":
-                currentRecordBuilder.reportNo(normalizeSpace(currentValueBuilder.toString()));
+                currentRecordBuilder.reportNo(getCurrentValue());
                 break;
             case "acm-class":
-                currentRecordBuilder.acmClass(normalizeSpace(currentValueBuilder.toString()));
+                currentRecordBuilder.acmClass(getCurrentValue());
                 break;
             case "msc-class":
-                currentRecordBuilder.mscClass(normalizeSpace(currentValueBuilder.toString()));
+                currentRecordBuilder.mscClass(getCurrentValue());
                 break;
             case "journal-ref":
-                currentRecordBuilder.journalRef(normalizeSpace(currentValueBuilder.toString()));
+                currentRecordBuilder.journalRef(getCurrentValue());
                 break;
             case "doi":
-                currentRecordBuilder.doi(normalizeSpace(currentValueBuilder.toString()));
+                currentRecordBuilder.doi(getCurrentValue());
                 break;
             case "license":
-                currentRecordBuilder.license(normalizeSpace(currentValueBuilder.toString()));
+                currentRecordBuilder.license(getCurrentValue());
                 break;
             case "abstract":
-                currentRecordBuilder.articleAbstract(normalizeSpace(currentValueBuilder.toString()));
+                currentRecordBuilder.articleAbstract(getCurrentValue());
                 break;
             // End record fields
         }
@@ -298,12 +297,27 @@ class XMLHandler extends DefaultHandler {
             return;
         }
 
-        if (LEAF_NODE_NAMES.contains(nodeStack.peek())) {
-            currentValueBuilder.append(value);
+        if (LEAF_NAMES.contains(nodeStack.peek())) {
+            currentLeafValueBuilder.append(value);
         }
     }
 
 
+    /**
+     * Return the value of the leaf node that we are currently in.  This value may have been built up from multiple
+     * lines, and is properly normalized.  Also invalidate the used StringBuilder.
+     * @throws SAXException if currentLeafValueBuilder is null
+     */
+    private String getCurrentValue() throws SAXException {
+        if (currentLeafValueBuilder == null) {
+            throw new SAXException(getIdentifierErrorString() +
+                    "Attempted to retrieve leaf node value from a null currentLeafValueBuilder!");
+        }
+
+        String currentValue = StringUtils.normalizeSpace(currentLeafValueBuilder.toString());
+        currentLeafValueBuilder = null;
+        return currentValue;
+    }
 
     /**
      * Parse the version number from the attributes of the "version" node.  Per the arXivRaw XML schema, this should be
@@ -341,7 +355,8 @@ class XMLHandler extends DefaultHandler {
         try {
             responseDate = ZonedDateTime.parse(value, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         } catch (DateTimeParseException e) {
-            throw new SAXException(getIdentifierErrorString() + "Could not parse responseDate '" + value + "' in ISO_OFFSET_DATE_TIME format!");
+            throw new SAXException(getIdentifierErrorString() + "Could not parse responseDate '" + value +
+                    "' in ISO_OFFSET_DATE_TIME format!");
         }
         return responseDate;
     }
@@ -355,7 +370,8 @@ class XMLHandler extends DefaultHandler {
         try {
             datestamp = LocalDate.parse(value);
         } catch(DateTimeParseException e) {
-            throw new SAXException(getIdentifierErrorString() + "Could not parse datestamp '" + value + "' in ISO_LOCAL_DATE format!");
+            throw new SAXException(getIdentifierErrorString() + "Could not parse datestamp '" + value +
+                    "' in ISO_LOCAL_DATE format!");
         }
         return datestamp;
     }
@@ -369,7 +385,8 @@ class XMLHandler extends DefaultHandler {
         try {
             versionDate = ZonedDateTime.parse(value, DateTimeFormatter.RFC_1123_DATE_TIME);
         } catch (DateTimeParseException e) {
-            throw new SAXException(getIdentifierErrorString() + "Could not parse version date '" + value + "' in RFC_1123_DATE_TIME format!");
+            throw new SAXException(getIdentifierErrorString() + "Could not parse version date '" + value +
+                    "' in RFC_1123_DATE_TIME format!");
         }
         return versionDate;
     }
@@ -428,8 +445,8 @@ class XMLHandler extends DefaultHandler {
     }
 
     /**
-     * Return a String containing the identifier of the record currently being processed, if it exists, to be prepended
-     * on any error messages.  This will aid in debugging.
+     * Return the identifier of the record currently being processed, if it exists, to be prepended to any error
+     * messages.  This will aid in debugging.
      */
     private String getIdentifierErrorString() {
         if (currentIdentifier != null) {
@@ -438,11 +455,5 @@ class XMLHandler extends DefaultHandler {
 
         return "";
     }
-
-
-
-
-
-
 
 }
