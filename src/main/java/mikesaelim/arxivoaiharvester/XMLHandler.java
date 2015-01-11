@@ -17,6 +17,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 
+import static org.apache.commons.lang3.StringUtils.normalizeSpace;
+
 /**
  * This is the handler used to parse the XML response of arXiv's OAI repository.  It is written to be compatible with
  * the OAI-PMH v2.0 XML schema for the verbs "GetRecord" and "ListRecords" only, with metadata in arXiv's XML schema for
@@ -94,19 +96,23 @@ class XMLHandler extends DefaultHandler {
      * "version" node.
      */
     private ArticleVersion.ArticleVersionBuilder currentVersionBuilder;
-    /**
-     * The StringBuilder for the abstract for the ArticleMetadata object currently being created.  This is initialized
-     * while entering a "record" node.
-     *
-     * Unfortunately, the abstract is received with extra line breaks, and each line break triggers a new invocation of
-     * characters(), so instead it must be built up piece-by-piece.  If we don't do it this way, and we simply assign
-     * the string to currentRecordBuilder.articleAbstract(), only the very last line will get taken.
-     */
-    private StringBuilder articleAbstractBuilder;
 
     private String resumptionToken;
     private Integer cursor;
     private Integer completeListSize;
+
+    /**
+     * A StringBuilder used to construct the value of the current leaf node.  The resulting String will get parsed and
+     * stored in the fields above.
+     *
+     * Unfortunately, the XML stream is received with extra spurious line breaks inside the field values, and some of
+     * the line breaks trigger a new invocation of the characters() method.  We deal with this corrupted XML by building
+     * the value Strings "line" by "line".  Sigh.
+     */
+    private StringBuilder currentValueBuilder;
+    private static final Set<String> LEAF_NODE_NAMES = Sets.newHashSet("responseDate", "resumptionToken", "identifier",
+            "datestamp", "setSpec", "id", "submitter", "date", "size", "source_type", "title", "authors", "categories",
+            "comments", "proxy", "report-no", "acm-class", "msc-class", "journal-ref", "doi", "license", "abstract");
 
     /**
      * At any point of the parsing process, this is a Stack of the XML nodes we are inside - the ones we have entered
@@ -153,7 +159,6 @@ class XMLHandler extends DefaultHandler {
                 currentRecordBuilder = ArticleMetadata.builder().retrievalDateTime(responseDate);
                 sets = Sets.newHashSet();
                 versions = Sets.newHashSet();
-                articleAbstractBuilder = new StringBuilder();
                 currentIdentifier = null;
                 break;
             case "header":
@@ -166,6 +171,9 @@ class XMLHandler extends DefaultHandler {
             case "resumptionToken":
                 cursor = parseCursor(attributes);
                 completeListSize = parseCompleteListSize(attributes);
+                // The lack of a break statement here is intentional
+            default:
+                currentValueBuilder = new StringBuilder();
         }
     }
 
@@ -194,14 +202,89 @@ class XMLHandler extends DefaultHandler {
                 break;
             case "record":
                 currentRecordBuilder.sets(sets)
-                        .versions(versions)
-                        .articleAbstract(articleAbstractBuilder.toString().trim());
+                        .versions(versions);
                 records.add(currentRecordBuilder.build());
                 currentIdentifier = null;
                 break;
             case "version":
                 versions.add(currentVersionBuilder.build());
                 break;
+
+            // Begin leaf nodes
+            case "responseDate":
+                responseDate = parseResponseDate(normalizeSpace(currentValueBuilder.toString()));
+                break;
+            case "resumptionToken":
+                resumptionToken = normalizeSpace(currentValueBuilder.toString());
+                break;
+
+            // Begin record fields
+            case "identifier":
+                currentIdentifier = normalizeSpace(currentValueBuilder.toString());
+                currentRecordBuilder.identifier(currentIdentifier);
+                break;
+            case "datestamp":
+                currentRecordBuilder.datestamp(parseDatestamp(normalizeSpace(currentValueBuilder.toString())));
+                break;
+            case "setSpec":
+                sets.add(normalizeSpace(currentValueBuilder.toString()));
+                break;
+            case "id":
+                currentRecordBuilder.id(normalizeSpace(currentValueBuilder.toString()));
+                break;
+            case "submitter":
+                currentRecordBuilder.submitter(normalizeSpace(currentValueBuilder.toString()));
+                break;
+
+            // Begin version fields
+            case "date":
+                currentVersionBuilder.submissionTime(parseVersionDate(normalizeSpace(currentValueBuilder.toString())));
+                break;
+            case "size":
+                currentVersionBuilder.size(normalizeSpace(currentValueBuilder.toString()));
+                break;
+            case "source_type":
+                currentVersionBuilder.sourceType(normalizeSpace(currentValueBuilder.toString()));
+                break;
+            // End version fields
+
+            case "title":
+                currentRecordBuilder.title(normalizeSpace(currentValueBuilder.toString()));
+                break;
+            case "authors":
+                currentRecordBuilder.authors(normalizeSpace(currentValueBuilder.toString()));
+                break;
+            case "categories":
+                currentRecordBuilder.categories(parseCategories(normalizeSpace(currentValueBuilder.toString())));
+                break;
+            case "comments":
+                currentRecordBuilder.comments(normalizeSpace(currentValueBuilder.toString()));
+                break;
+            case "proxy":
+                currentRecordBuilder.proxy(normalizeSpace(currentValueBuilder.toString()));
+                break;
+            case "report-no":
+                currentRecordBuilder.reportNo(normalizeSpace(currentValueBuilder.toString()));
+                break;
+            case "acm-class":
+                currentRecordBuilder.acmClass(normalizeSpace(currentValueBuilder.toString()));
+                break;
+            case "msc-class":
+                currentRecordBuilder.mscClass(normalizeSpace(currentValueBuilder.toString()));
+                break;
+            case "journal-ref":
+                currentRecordBuilder.journalRef(normalizeSpace(currentValueBuilder.toString()));
+                break;
+            case "doi":
+                currentRecordBuilder.doi(normalizeSpace(currentValueBuilder.toString()));
+                break;
+            case "license":
+                currentRecordBuilder.license(normalizeSpace(currentValueBuilder.toString()));
+                break;
+            case "abstract":
+                currentRecordBuilder.articleAbstract(normalizeSpace(currentValueBuilder.toString()));
+                break;
+            // End record fields
         }
     }
 
@@ -215,81 +298,8 @@ class XMLHandler extends DefaultHandler {
             return;
         }
 
-        switch (nodeStack.peek()) {
-            case "responseDate":
-                responseDate = parseResponseDate(value);
-                break;
-            case "resumptionToken":
-                resumptionToken = value;
-                break;
-
-            // Begin record fields
-            case "identifier":
-                currentRecordBuilder.identifier(value);
-                currentIdentifier = value;
-                break;
-            case "datestamp":
-                currentRecordBuilder.datestamp(parseDatestamp(value));
-                break;
-            case "setSpec":
-                sets.add(value);
-                break;
-            case "id":
-                currentRecordBuilder.id(value);
-                break;
-            case "submitter":
-                currentRecordBuilder.submitter(value);
-                break;
-
-            // Begin version fields
-            case "date":
-                currentVersionBuilder.submissionTime(parseVersionDate(value));
-                break;
-            case "size":
-                currentVersionBuilder.size(value);
-                break;
-            case "source_type":
-                currentVersionBuilder.sourceType(value);
-                break;
-            // End version fields
-
-            case "title":
-                currentRecordBuilder.title(value);
-                break;
-            case "authors":
-                currentRecordBuilder.authors(value);
-                break;
-            case "categories":
-                currentRecordBuilder.categories(parseCategories(value));
-                break;
-            case "comments":
-                currentRecordBuilder.comments(value);
-                break;
-            case "proxy":
-                currentRecordBuilder.proxy(value);
-                break;
-            case "report-no":
-                currentRecordBuilder.reportNo(value);
-                break;
-            case "acm-class":
-                currentRecordBuilder.acmClass(value);
-                break;
-            case "msc-class":
-                currentRecordBuilder.mscClass(value);
-                break;
-            case "journal-ref":
-                currentRecordBuilder.journalRef(value);
-                break;
-            case "doi":
-                currentRecordBuilder.doi(value);
-                break;
-            case "license":
-                currentRecordBuilder.license(value);
-                break;
-            case "abstract":
-                articleAbstractBuilder.append(value.replace('\n', ' '));
-                break;
-            // End record fields
+        if (LEAF_NODE_NAMES.contains(nodeStack.peek())) {
+            currentValueBuilder.append(value);
         }
     }
 
