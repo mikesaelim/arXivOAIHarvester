@@ -36,7 +36,7 @@ public class ArxivListRecordsRequest extends ArxivRequest {
     private final URI uri;
 
     /**
-     * Constructs an ArxivListRecordsRequest object.
+     * Constructs an ArxivListRecordsRequest object.  All parameters are optional.
      * @throws IllegalArgumentException if fromDate is after untilDate.
      * @throws URISyntaxException if the input did not create a valid URI
 
