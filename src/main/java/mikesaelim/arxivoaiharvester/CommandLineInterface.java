@@ -1,6 +1,7 @@
 package mikesaelim.arxivoaiharvester;
 
 import mikesaelim.arxivoaiharvester.data.ArticleMetadata;
+import mikesaelim.arxivoaiharvester.data.ArticleVersion;
 import mikesaelim.arxivoaiharvester.io.*;
 
 import java.net.URISyntaxException;
@@ -77,10 +78,22 @@ public class CommandLineInterface {
             System.out.println("************ Record " + (recordNumber + 1) + " of " + records.size() + " ************");
             printRecord(records.get(recordNumber));
             System.out.println();
+
+            if (recordNumber == records.size() - 1) {
+                System.out.println("End of records.");
+                return;
+            }
+
+            String readerInput = scanner.next();
+            if (readerInput.trim().equals("q")) {
+                return;
+            }
         }
-        System.out.println("End of records.");
     }
 
+    /**
+     * This handles the creation of an ArxivRequest for the "GetRecord" verb.
+     */
     private static ArxivGetRecordRequest getGetRecordRequest(Scanner scanner) throws URISyntaxException {
         System.out.println("Sweet, let's do a GetRecord query.");
         System.out.println();
@@ -91,6 +104,9 @@ public class CommandLineInterface {
         return new ArxivGetRecordRequest(identifier);
     }
 
+    /**
+     * This handles the creation of an ArxivRequest for the "ListRecords" verb.
+     */
     private static ArxivListRecordsRequest getListRecordsRequest(Scanner scanner) throws URISyntaxException {
         System.out.println("Sweet, let's do a ListRecords query.");
         System.out.println();
@@ -107,8 +123,60 @@ public class CommandLineInterface {
                 setSpec.isEmpty() ? null : setSpec);
     }
 
+    /**
+     * This prints a single record from the response.
+     */
     private static void printRecord(ArticleMetadata record) {
+        printLine("Retrieval datetime: ", record.getRetrievalDateTime());
+        System.out.println();
 
+        printLine("Identifier: ", record.getIdentifier());
+        printLine("Datestamp: ", record.getDatestamp());
+        System.out.print("Sets:");
+        for (String setSpec : record.getSets()) {
+            System.out.print(" " + setSpec);
+        }
+        System.out.println();
+        printLine("Deleted: ", String.valueOf(record.isDeleted()));
+        System.out.println();
+
+        printLine("Id: ", record.getId());
+        printLine("Submitter: ", record.getSubmitter());
+        System.out.println();
+
+        for (ArticleVersion version : record.getVersions()) {
+            System.out.println("v" + version.getVersionNumber() + ":");
+            printLine("   Submission time: ", version.getSubmissionTime());
+            printLine("   Size: ", version.getSize());
+            printLine("   Source type: ", version.getSourceType());
+        }
+        System.out.println();
+
+        printLine("Title: ", record.getTitle());
+        printLine("Authors: ", record.getAuthors());
+        System.out.print("Categories: ");
+        for (String category : record.getCategories()) {
+            System.out.print(category);
+        }
+        System.out.println();
+        printLine("Comments: ", record.getComments());
+        printLine("Proxy: ", record.getProxy());
+        printLine("Report No.: ", record.getReportNo());
+        printLine("ACM class: ", record.getAcmClass());
+        printLine("MSC class: ", record.getMscClass());
+        printLine("Journal ref: ", record.getJournalRef());
+        printLine("DOI: ", record.getDoi());
+        printLine("License: ", record.getLicense());
+        printLine("Abstract: ", record.getArticleAbstract());
+    }
+
+    /**
+     * This prints a line, unless the data is null.
+     */
+    private static void printLine(String description, Object value) {
+        if (value != null) {
+            System.out.println(description + value.toString());
+        }
     }
 
 
