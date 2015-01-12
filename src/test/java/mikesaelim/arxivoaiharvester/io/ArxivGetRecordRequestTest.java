@@ -12,13 +12,22 @@ public class ArxivGetRecordRequestTest {
     }
 
     @Test
-    public void testGetURI() throws Exception {
+    public void testGetUri() throws Exception {
         String identifier = "oai:arXiv.org:1302.2146";
 
         ArxivGetRecordRequest request = new ArxivGetRecordRequest(identifier);
 
         assertEquals("http://export.arxiv.org/oai2?verb=GetRecord&metadataPrefix=arXivRaw&identifier=oai%3AarXiv.org%3A1302.2146",
-                request.getURI().toString());
+                request.getUri().toString());
+    }
+
+    @Test
+    public void testConstructor_WithoutPrefix() throws Exception {
+        String identifier = "1302.2146";
+
+        ArxivGetRecordRequest request = new ArxivGetRecordRequest(identifier);
+
+        assertEquals("oai:arXiv.org:1302.2146", request.getIdentifier());
     }
 
 }

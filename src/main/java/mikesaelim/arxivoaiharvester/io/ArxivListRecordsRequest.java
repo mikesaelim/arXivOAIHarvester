@@ -30,11 +30,19 @@ public class ArxivListRecordsRequest extends ArxivRequest {
      */
     private final String setSpec;
 
+    /**
+     * The resulting URI.
+     */
+    private final URI uri;
 
     /**
+     * Constructs an ArxivListRecordsRequest object.
      * @throws IllegalArgumentException if fromDate is after untilDate.
+     * @throws URISyntaxException if the input did not create a valid URI
+
      */
-    public ArxivListRecordsRequest(LocalDate fromDate, LocalDate untilDate, String setSpec) throws IllegalArgumentException {
+    public ArxivListRecordsRequest(LocalDate fromDate, LocalDate untilDate, String setSpec)
+            throws IllegalArgumentException, URISyntaxException {
         super(Verb.LIST_RECORDS);
         this.fromDate = fromDate;
         this.untilDate = untilDate;
@@ -43,10 +51,11 @@ public class ArxivListRecordsRequest extends ArxivRequest {
         if (fromDate != null && untilDate != null && fromDate.isAfter(untilDate)) {
             throw new IllegalArgumentException("tried to create ArxivListRecordsRequest with invalid datestamp range");
         }
+
+        uri = constructURI();
     }
 
-    @Override
-    public URI getURI() throws URISyntaxException {
+    private URI constructURI() throws URISyntaxException {
         URIBuilder uriBuilder = new URIBuilder()
                 .setScheme("http")
                 .setHost(HOST)

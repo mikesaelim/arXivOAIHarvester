@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
  * The complete set of information needed to construct a request to send to the arXiv OAI repository.  There are different
@@ -39,8 +38,7 @@ public abstract class ArxivRequest {
     /**
      * Generate the request URI.
      * @return request URI
-     * @throws URISyntaxException if the inputs to the ArxivRequest object did not create a valid URI
      */
-    public abstract URI getURI() throws URISyntaxException;
+    public abstract URI getUri();
 
 }

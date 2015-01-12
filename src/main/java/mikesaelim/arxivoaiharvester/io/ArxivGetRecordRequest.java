@@ -11,24 +11,43 @@ import java.net.URISyntaxException;
  * An ArxivRequest for the GetRecord verb.  This request is used to retrieve a single record from the repository, by its
  * identifier.
  *
+ * arXiv identifiers follow the format "oai:arXiv.org:nucl-ex/0511023", or "oai:arXiv.org:1302.2146", or
+ * "oai:arXiv.org:1501.00001".  However, the constructor will also accept identifiers without the "oai:arXiv.org"
+ * prefix, and convert them automatically.
+ *
  * Created by Mike Saelim on 1/5/15.
  */
 @Getter
 public class ArxivGetRecordRequest extends ArxivRequest {
 
     /**
-     * Unique identifier of the record.
+     * Unique identifier of the record.  For records in the arXiv OAI repository, this should start with "oai:arXiv.org:".
      */
     private final String identifier;
 
+    /**
+     * The resulting URI.
+     */
+    private final URI uri;
 
-    public ArxivGetRecordRequest(@NonNull String identifier) {
+    /**
+     * Constructs an ArxivGetRecordRequest object.
+     * @param identifier unique record identifier, with or without the "oai:arXiv.org:" prefix.
+     * @throws URISyntaxException if the input did not create a valid URI
+     */
+    public ArxivGetRecordRequest(@NonNull String identifier) throws URISyntaxException {
         super(Verb.GET_RECORD);
-        this.identifier = identifier;
+
+        if (identifier.startsWith("oai:arXiv.org:")) {
+            this.identifier = identifier;
+        } else {
+            this.identifier = "oai:arXiv.org:" + identifier;
+        }
+
+        uri = constructURI();
     }
 
-    @Override
-    public URI getURI() throws URISyntaxException {
+    private URI constructURI() throws URISyntaxException {
         return new URIBuilder()
                 .setScheme("http")
                 .setHost(HOST)
