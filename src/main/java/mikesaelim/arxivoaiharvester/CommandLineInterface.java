@@ -28,7 +28,7 @@ public class CommandLineInterface {
         System.out.println("    or enter anything else to quit.");
 
         ArxivRequest request;
-        String verbChoice = scanner.next();
+        String verbChoice = scanner.nextLine();
         try {
             switch (verbChoice.trim()) {
                 case "1":
@@ -61,31 +61,39 @@ public class CommandLineInterface {
 
         System.out.println();
         System.out.println("Response received!");
-        System.out.println("    Response datetime: " + response.getResponseDate().toString());
+        printLine("    Response datetime: ", response.getResponseDate());
         if (response.getResumptionToken() != null) {
-            System.out.println("    Resumption token: " + response.getResumptionToken());
-            System.out.println("    Cursor: " + response.getCursor());
-            System.out.println("    Complete list size: " + response.getCompleteListSize());
+            printLine("    Resumption token: ", response.getResumptionToken());
+            printLine("    Cursor: ", response.getCursor());
+            printLine("    Complete list size: ", response.getCompleteListSize());
         }
+
         List<ArticleMetadata> records = response.getRecords();
-        System.out.println("    Number of records retrieved in this batch: " + records.size());
-        System.out.println();
-        if (records.size() == 0) {
+        if (records == null) {
+            System.out.println("Blank response.");
             return;
+        } else if (records.size() == 0) {
+            System.out.println("No records returned.");
+            return;
+        } else {
+            printLine("    Number of records retrieved in this batch: ", records.size());
+            System.out.println();
         }
+
         System.out.println("Now you can view each of the records individually.  Simply press ENTER to bring up the next record.  Type \'q\' and ENTER to exit.");
         for (int recordNumber = 0; recordNumber < records.size(); recordNumber++) {
+            String readerInput = scanner.nextLine();
+            if (readerInput.trim().equals("q")) {
+                return;
+            }
+
             System.out.println("************ Record " + (recordNumber + 1) + " of " + records.size() + " ************");
             printRecord(records.get(recordNumber));
             System.out.println();
 
             if (recordNumber == records.size() - 1) {
+                System.out.println("************************************");
                 System.out.println("End of records.");
-                return;
-            }
-
-            String readerInput = scanner.next();
-            if (readerInput.trim().equals("q")) {
                 return;
             }
         }
@@ -99,7 +107,7 @@ public class CommandLineInterface {
         System.out.println();
         System.out.println("What is the identifier for the record you wish to get?");
 
-        String identifier = scanner.next().trim();
+        String identifier = scanner.nextLine().trim();
 
         return new ArxivGetRecordRequest(identifier);
     }
@@ -111,11 +119,11 @@ public class CommandLineInterface {
         System.out.println("Sweet, let's do a ListRecords query.");
         System.out.println();
         System.out.println("From date?  (in yyyy-mm-dd format; leave it blank for none)");
-        String fromDate = scanner.next().trim();
+        String fromDate = scanner.nextLine().trim();
         System.out.println("Until date?  (in yyyy-mm-dd format; leave it blank for none)");
-        String untilDate = scanner.next().trim();
+        String untilDate = scanner.nextLine().trim();
         System.out.println("Set restriction?  (leave it blank for none)");
-        String setSpec = scanner.next().trim();
+        String setSpec = scanner.nextLine().trim();
 
         return new ArxivListRecordsRequest(
                 fromDate.isEmpty() ? null : LocalDate.parse(fromDate),
@@ -137,8 +145,10 @@ public class CommandLineInterface {
             System.out.print(" " + setSpec);
         }
         System.out.println();
-        printLine("Deleted: ", String.valueOf(record.isDeleted()));
-        System.out.println();
+        if (record.isDeleted()) {
+            System.out.println("Deleted");
+            return;
+        }
 
         printLine("Id: ", record.getId());
         printLine("Submitter: ", record.getSubmitter());

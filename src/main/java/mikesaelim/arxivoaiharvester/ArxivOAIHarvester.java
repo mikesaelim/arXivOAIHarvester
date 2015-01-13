@@ -8,6 +8,7 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -44,7 +45,9 @@ public class ArxivOAIHarvester {
 
         // TODO: handle other response codes
         if (httpStatusCode != 200) {
-            throw new Exception("Returned status code " + httpStatusCode + " !");
+            throw new Exception("Returned status code " + httpStatusCode + ": " +
+                    httpResponse.getStatusLine().getReasonPhrase() + ": " +
+                    EntityUtils.toString(httpResponse.getEntity()));
         }
 
         // TODO: implement resumption token storage and other flow control stuff
