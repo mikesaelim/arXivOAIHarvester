@@ -3,11 +3,11 @@ package mikesaelim.arxivoaiharvester;
 import com.google.common.annotations.VisibleForTesting;
 import mikesaelim.arxivoaiharvester.io.ArxivRequest;
 import mikesaelim.arxivoaiharvester.io.ArxivResponse;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.xml.sax.SAXException;
 
@@ -33,26 +33,31 @@ public class ArxivOAIHarvester {
 
     public ArxivResponse getNextBatch() throws IOException, ClientProtocolException, Exception {
         // TODO: the Exception in the throws clause is temporary, only used until we handle response codes and flow control properly
-        // TODO: persistent HttpClient instance?  Closeable objects?  HttpClient passed in, leading to unit tests?
-        HttpClient httpClient = HttpClientBuilder.create().build();
+        // TODO: persistent HttpClient instance?  HttpClient passed in, leading to unit tests?
+        ArxivResponse arxivResponse;
 
-        HttpGet httpRequest = new HttpGet(arxivRequest.getUri());
-        httpRequest.addHeader("User-Agent", arxivRequest.getUserAgentHeader());
-        httpRequest.addHeader("From", arxivRequest.getFromHeader());
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            HttpGet httpRequest = new HttpGet(arxivRequest.getUri());
+            httpRequest.addHeader("User-Agent", arxivRequest.getUserAgentHeader());
+            httpRequest.addHeader("From", arxivRequest.getFromHeader());
 
-        HttpResponse httpResponse = httpClient.execute(httpRequest);
-        int httpStatusCode = httpResponse.getStatusLine().getStatusCode();
+            try (CloseableHttpResponse httpResponse = httpClient.execute(httpRequest)) {
+                int httpStatusCode = httpResponse.getStatusLine().getStatusCode();
 
-        // TODO: handle other response codes
-        if (httpStatusCode != 200) {
-            throw new Exception("Returned status code " + httpStatusCode + ": " +
-                    httpResponse.getStatusLine().getReasonPhrase() + ": " +
-                    EntityUtils.toString(httpResponse.getEntity()));
+                // TODO: handle other response codes
+                if (httpStatusCode != 200) {
+                    throw new Exception("Returned status code " + httpStatusCode + ": " +
+                            httpResponse.getStatusLine().getReasonPhrase() + ": " +
+                            EntityUtils.toString(httpResponse.getEntity()));
+                }
+
+                // TODO: implement resumption token storage and other flow control stuff
+
+                arxivResponse = parseXMLStream(httpResponse.getEntity().getContent());
+            }
         }
 
-        // TODO: implement resumption token storage and other flow control stuff
-
-        return parseXMLStream(httpResponse.getEntity().getContent());
+        return arxivResponse;
     }
 
     public boolean hasNextBatch() {
