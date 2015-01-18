@@ -174,9 +174,9 @@ public class CommandLineInterface {
 
         printLine("Title: ", record.getTitle());
         printLine("Authors: ", record.getAuthors());
-        System.out.print("Categories: ");
+        System.out.print("Categories:");
         for (String category : record.getCategories()) {
-            System.out.print(category);
+            System.out.print(" " + category);
         }
         System.out.println();
         printLine("Comments: ", record.getComments());
