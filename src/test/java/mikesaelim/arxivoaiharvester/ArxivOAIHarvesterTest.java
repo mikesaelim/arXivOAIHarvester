@@ -4,6 +4,7 @@ import mikesaelim.arxivoaiharvester.data.ArticleMetadata;
 import mikesaelim.arxivoaiharvester.data.ArticleVersion;
 import mikesaelim.arxivoaiharvester.io.ArxivRequest;
 import mikesaelim.arxivoaiharvester.io.ArxivResponse;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -23,12 +24,14 @@ public class ArxivOAIHarvesterTest {
     private ArxivOAIHarvester harvester;
 
     @Mock
+    private CloseableHttpClient httpClient;
+    @Mock
     private ArxivRequest request;
 
     @Before
     public void setUp() throws Exception {
         initMocks(this);
-        harvester = new ArxivOAIHarvester(request);
+        harvester = new ArxivOAIHarvester(httpClient, request);
     }
 
     @Test

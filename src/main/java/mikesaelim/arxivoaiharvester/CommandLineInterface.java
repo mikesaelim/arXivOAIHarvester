@@ -3,6 +3,8 @@ package mikesaelim.arxivoaiharvester;
 import mikesaelim.arxivoaiharvester.data.ArticleMetadata;
 import mikesaelim.arxivoaiharvester.data.ArticleVersion;
 import mikesaelim.arxivoaiharvester.io.*;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 
 import java.net.URISyntaxException;
 import java.time.LocalDate;
@@ -16,6 +18,7 @@ import java.util.Scanner;
 public class CommandLineInterface {
 
     public static void main(String[] args) {
+        CloseableHttpClient httpClient = HttpClients.createDefault();
         Scanner scanner = new Scanner(System.in);
 
         System.out.println();
@@ -47,7 +50,14 @@ public class CommandLineInterface {
         }
         System.out.println();
         System.out.println("Preparing harvester...");
-        ArxivOAIHarvester harvester = new ArxivOAIHarvester(request);
+        ArxivOAIHarvester harvester;
+        try {
+            harvester = new ArxivOAIHarvester(httpClient, request);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+            return;
+        }
 
         System.out.println("Sending query; retrieving response...");
         ArxivResponse response;
