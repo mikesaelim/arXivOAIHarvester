@@ -8,6 +8,8 @@ import mikesaelim.arxivoaiharvester.data.ArticleMetadata;
 import mikesaelim.arxivoaiharvester.data.ArticleVersion;
 import mikesaelim.arxivoaiharvester.io.ArxivResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -45,6 +47,8 @@ class XMLHandler extends DefaultHandler {
 
     // TODO: handle warnings, errors, etc. from the parser
     // TODO: handle error responses from the repository
+
+    Logger log = LoggerFactory.getLogger(XMLHandler.class);
 
     /**
      * This is the final output of the parsing process.
@@ -141,6 +145,7 @@ class XMLHandler extends DefaultHandler {
             if (nodeStack == null) {
                 nodeStack = new Stack<>();
             } else {
+                logNodeStack();
                 throw new SAXException(getIdentifierErrorString() + "Found nested <OAI-PMH> tags!");
             }
         }
@@ -186,6 +191,7 @@ class XMLHandler extends DefaultHandler {
 
         // If the closing tag doesn't match the last opening tag, throw an exception.
         if (!qName.equals(currentNode)) {
+            logNodeStack();
             throw new SAXException(getIdentifierErrorString() + "Opening tag '" + currentNode +
                     "' does not match closing tag '" + qName + "'!");
         }
@@ -310,6 +316,7 @@ class XMLHandler extends DefaultHandler {
      */
     private String getCurrentValue() throws SAXException {
         if (currentLeafValueBuilder == null) {
+            logNodeStack();
             throw new SAXException(getIdentifierErrorString() +
                     "Attempted to retrieve leaf node value from a null currentLeafValueBuilder!");
         }
@@ -330,9 +337,11 @@ class XMLHandler extends DefaultHandler {
         String versionLabel = attributes.getValue("version");
 
         if (versionLabel == null) {
+            logNodeStack();
             throw new SAXException(getIdentifierErrorString() + "Could not find version label!");
         }
         if (!versionLabel.startsWith("v")) {
+            logNodeStack();
             throw new SAXException(getIdentifierErrorString() + "Could not parse version label '" + versionLabel + "'!");
         }
 
@@ -340,6 +349,7 @@ class XMLHandler extends DefaultHandler {
         try {
             version = Integer.valueOf(versionLabel.substring(1));
         } catch (NumberFormatException e) {
+            logNodeStack();
             throw new SAXException(getIdentifierErrorString() + "Could not parse version label '" + versionLabel + "'!");
         }
 
@@ -355,6 +365,7 @@ class XMLHandler extends DefaultHandler {
         try {
             responseDate = ZonedDateTime.parse(value, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         } catch (DateTimeParseException e) {
+            logNodeStack();
             throw new SAXException(getIdentifierErrorString() + "Could not parse responseDate '" + value +
                     "' in ISO_OFFSET_DATE_TIME format!");
         }
@@ -370,6 +381,7 @@ class XMLHandler extends DefaultHandler {
         try {
             datestamp = LocalDate.parse(value);
         } catch(DateTimeParseException e) {
+            logNodeStack();
             throw new SAXException(getIdentifierErrorString() + "Could not parse datestamp '" + value +
                     "' in ISO_LOCAL_DATE format!");
         }
@@ -385,6 +397,7 @@ class XMLHandler extends DefaultHandler {
         try {
             versionDate = ZonedDateTime.parse(value, DateTimeFormatter.RFC_1123_DATE_TIME);
         } catch (DateTimeParseException e) {
+            logNodeStack();
             throw new SAXException(getIdentifierErrorString() + "Could not parse version date '" + value +
                     "' in RFC_1123_DATE_TIME format!");
         }
@@ -396,10 +409,7 @@ class XMLHandler extends DefaultHandler {
      * @return List of separate categories, in the same order as they were in the string
      */
     @VisibleForTesting List<String> parseCategories(String value) {
-        if (value == null) {
-            return Lists.newArrayList();
-        }
-        return Lists.newArrayList(value.split(" "));
+        return value != null ? Lists.newArrayList(value.split(" ")) : Lists.newArrayList();
     }
 
     /**
@@ -416,7 +426,7 @@ class XMLHandler extends DefaultHandler {
             try {
                 cursorPosition = Integer.valueOf(cursorString);
             } catch (NumberFormatException e) {
-                // Do nothing, although in the future this will be used for logging
+                log.warn("Cursor not found for resumption token!");
             }
         }
 
@@ -437,7 +447,7 @@ class XMLHandler extends DefaultHandler {
             try {
                 completeListSizeAmount = Integer.valueOf(completeListSizeString);
             } catch (NumberFormatException e) {
-                // Do nothing, although in the future this will be used for logging
+                log.warn("Complete list size not found for resumption token!");
             }
         }
 
@@ -445,8 +455,18 @@ class XMLHandler extends DefaultHandler {
     }
 
     /**
+     * Log the current state of the node stack, in the case of an error.  This will aid in debugging by telling us where
+     * the error occurred.
+     */
+    private void logNodeStack() {
+        if (nodeStack != null) {
+            log.error("Error in node stack: " + nodeStack.toString());
+        }
+    }
+
+    /**
      * Return the identifier of the record currently being processed, if it exists, to be prepended to any error
-     * messages.  This will aid in debugging.
+     * messages.  This will aid in debugging by telling us where the error occurred.
      */
     private String getIdentifierErrorString() {
         if (currentIdentifier != null) {

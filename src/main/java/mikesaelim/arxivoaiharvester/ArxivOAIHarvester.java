@@ -8,6 +8,8 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -22,6 +24,8 @@ import java.io.InputStream;
  * Created by Mike Saelim on 1/3/15.
  */
 public class ArxivOAIHarvester {
+
+    private final Logger log = LoggerFactory.getLogger(ArxivOAIHarvester.class);
 
     private final SAXParser parser;
     private final CloseableHttpClient httpClient;
@@ -41,6 +45,8 @@ public class ArxivOAIHarvester {
         // TODO: the Exception in the throws clause is temporary, only used until we handle response codes and flow control properly
         ArxivResponse arxivResponse;
 
+        log.info("Sending request to arXiv OAI repository: {}", arxivRequest.getUri());
+
         HttpGet httpRequest = new HttpGet(arxivRequest.getUri());
         httpRequest.addHeader("User-Agent", arxivRequest.getUserAgentHeader());
         httpRequest.addHeader("From", arxivRequest.getFromHeader());
@@ -56,8 +62,12 @@ public class ArxivOAIHarvester {
             }
 
             // TODO: implement resumption token storage and other flow control stuff
+            // TODO: handle parsing SAXExceptions?
+            log.info("Parsing response from arXiv OAI repository for request {}", arxivRequest.getUri());
 
             arxivResponse = parseXMLStream(httpResponse.getEntity().getContent());
+
+            log.info("Response parsed for request {}", arxivRequest.getUri());
         }
 
         return arxivResponse;
