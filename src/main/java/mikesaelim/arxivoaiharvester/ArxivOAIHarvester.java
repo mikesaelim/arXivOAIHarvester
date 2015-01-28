@@ -1,6 +1,7 @@
 package mikesaelim.arxivoaiharvester;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import mikesaelim.arxivoaiharvester.io.ArxivRequest;
 import mikesaelim.arxivoaiharvester.io.ArxivResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -31,6 +32,10 @@ public class ArxivOAIHarvester {
     private final CloseableHttpClient httpClient;
 
     private final ArxivRequest arxivRequest;
+
+    private String resumptionToken;
+    private Integer currentPosition = 0;  // TODO: javadoc - number of records already returned = index of next record to be returned since start from 0
+    private Integer completeSize;         // TODO: javadoc - complete size of the list
     // TODO: other fields for flow control
 
     public ArxivOAIHarvester(CloseableHttpClient httpClient, ArxivRequest arxivRequest)
@@ -41,9 +46,9 @@ public class ArxivOAIHarvester {
         this.arxivRequest = arxivRequest;
     }
 
+    // This takes some time; it's implemented synchronously, and it's up to the user to write an asynchronous call if he/she wants one.
     public ArxivResponse getNextBatch() throws IOException, ClientProtocolException, Exception {
         // TODO: the Exception in the throws clause is temporary, only used until we handle response codes and flow control properly
-        ArxivResponse arxivResponse;
 
         log.info("Sending request to arXiv OAI repository: {}", arxivRequest.getUri());
 
@@ -51,6 +56,7 @@ public class ArxivOAIHarvester {
         httpRequest.addHeader("User-Agent", arxivRequest.getUserAgentHeader());
         httpRequest.addHeader("From", arxivRequest.getFromHeader());
 
+        ParsedXmlResponse parsedXmlResponse;
         try (CloseableHttpResponse httpResponse = httpClient.execute(httpRequest)) {
             int httpStatusCode = httpResponse.getStatusLine().getStatusCode();
 
@@ -65,10 +71,23 @@ public class ArxivOAIHarvester {
             // TODO: handle parsing SAXExceptions?
             log.info("Parsing response from arXiv OAI repository for request {}", arxivRequest.getUri());
 
-            arxivResponse = parseXMLStream(httpResponse.getEntity().getContent());
+            parsedXmlResponse = parseXMLStream(httpResponse.getEntity().getContent());
 
             log.info("Response parsed for request {}", arxivRequest.getUri());
         }
+
+        ArxivResponse arxivResponse = ArxivResponse.builder()
+                .arxivRequest(arxivRequest)
+                .responseDate(parsedXmlResponse.getResponseDate())
+                .records(ImmutableList.copyOf(parsedXmlResponse.getRecords()))
+                .build();
+
+        resumptionToken = parsedXmlResponse.getResumptionToken();
+        // TODO: ensure consistency with cursor?
+        currentPosition += parsedXmlResponse.getRecords().size();
+        // TODO: perhaps only set this on first response
+        completeSize = parsedXmlResponse.getCompleteListSize() != null ?
+                parsedXmlResponse.getCompleteListSize() : parsedXmlResponse.getRecords().size();
 
         return arxivResponse;
     }
@@ -82,12 +101,19 @@ public class ArxivOAIHarvester {
         return arxivRequest;
     }
 
-    @VisibleForTesting ArxivResponse parseXMLStream(InputStream inputStream) throws SAXException, IOException {
-        ArxivResponse.ArxivResponseBuilder responseBuilder = ArxivResponse.builder().arxivRequest(arxivRequest);
+    public Integer getCurrentPosition() {
+        return currentPosition;
+    }
 
-        parser.parse(inputStream, new XMLHandler(responseBuilder));
+    // Null if not known/valid
+    public Integer getCompleteSize() {
+        return completeSize;
+    }
 
-        return responseBuilder.build();
+    @VisibleForTesting ParsedXmlResponse parseXMLStream(InputStream inputStream) throws SAXException, IOException {
+        ParsedXmlResponse parsedXmlResponse = new ParsedXmlResponse();
+        parser.parse(inputStream, new XMLHandler(parsedXmlResponse));
+        return parsedXmlResponse;
     }
 
 }

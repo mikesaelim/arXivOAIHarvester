@@ -72,12 +72,6 @@ public class CommandLineInterface {
         System.out.println();
         System.out.println("Response received!");
         printLine("    Response datetime: ", response.getResponseDate());
-        if (response.getResumptionToken() != null) {
-            printLine("    Resumption token: ", response.getResumptionToken());
-            printLine("    Cursor: ", response.getCursor());
-            printLine("    Complete list size: ", response.getCompleteListSize());
-        }
-
         List<ArticleMetadata> records = response.getRecords();
         if (records == null) {
             System.out.println("Blank response.");
@@ -89,6 +83,12 @@ public class CommandLineInterface {
             printLine("    Number of records retrieved in this batch: ", records.size());
             System.out.println();
         }
+
+        System.out.println("Current state of the harvester:");
+        printLine("    Current position: ", harvester.getCurrentPosition());
+        printLine("    Complete list size: ", harvester.getCompleteSize());
+        System.out.println();
+
 
         System.out.println("Now you can view each of the records individually.  Simply press ENTER to bring up the next record.  Type \'q\' and ENTER to exit.");
         for (int recordNumber = 0; recordNumber < records.size(); recordNumber++) {

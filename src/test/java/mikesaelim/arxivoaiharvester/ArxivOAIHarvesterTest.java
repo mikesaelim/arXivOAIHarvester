@@ -3,7 +3,6 @@ package mikesaelim.arxivoaiharvester;
 import mikesaelim.arxivoaiharvester.data.ArticleMetadata;
 import mikesaelim.arxivoaiharvester.data.ArticleVersion;
 import mikesaelim.arxivoaiharvester.io.ArxivRequest;
-import mikesaelim.arxivoaiharvester.io.ArxivResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,11 +37,10 @@ public class ArxivOAIHarvesterTest {
     public void testParseXMLStream_GetRecords() throws Exception {
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream("SampleGetRecordResponse.xml");
 
-        ArxivResponse response = harvester.parseXMLStream(inputStream);
+        ParsedXmlResponse response = harvester.parseXMLStream(inputStream);
 
         inputStream.close();
 
-        assertSame(request, response.getArxivRequest());
         assertEquals(ZonedDateTime.of(2015, 1, 6, 20, 48, 16, 0, ZoneId.of("Z")), response.getResponseDate());
         assertNull(response.getResumptionToken());
         assertNull(response.getCursor());
@@ -113,11 +111,10 @@ public class ArxivOAIHarvesterTest {
     public void testParseXMLStream_ListRecords() throws Exception {
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream("SampleListRecordsResponse.xml");
 
-        ArxivResponse response = harvester.parseXMLStream(inputStream);
+        ParsedXmlResponse response = harvester.parseXMLStream(inputStream);
 
         inputStream.close();
 
-        assertSame(request, response.getArxivRequest());
         assertEquals(ZonedDateTime.of(2015, 1, 6, 20, 49, 59, 0, ZoneId.of("Z")), response.getResponseDate());
         assertEquals("726959|1001", response.getResumptionToken());
         assertEquals(0, response.getCursor().intValue());

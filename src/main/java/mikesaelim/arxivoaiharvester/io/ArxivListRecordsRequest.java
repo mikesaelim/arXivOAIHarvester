@@ -56,13 +56,7 @@ public class ArxivListRecordsRequest extends ArxivRequest {
     }
 
     private URI constructURI() throws URISyntaxException {
-        URIBuilder uriBuilder = new URIBuilder()
-                .setScheme("http")
-                .setHost(HOST)
-                .setPath(PATH)
-                .addParameter("verb", this.getVerb().getUriFormat())
-                .addParameter("metadataPrefix", METADATA_PREFIX);
-
+        URIBuilder uriBuilder = getIncompleteUriBuilder();
         if (fromDate != null) {
             uriBuilder.addParameter("from", fromDate.toString());
         }

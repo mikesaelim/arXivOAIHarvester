@@ -2,6 +2,7 @@ package mikesaelim.arxivoaiharvester.io;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.http.client.utils.URIBuilder;
 
 import java.net.URI;
 
@@ -15,6 +16,7 @@ import java.net.URI;
 @Setter
 public abstract class ArxivRequest {
 
+    protected final String SCHEME = "http";
     protected final String HOST = "export.arxiv.org";
     protected final String PATH = "/oai2";
     protected final String METADATA_PREFIX = "arXivRaw";
@@ -41,4 +43,16 @@ public abstract class ArxivRequest {
      */
     public abstract URI getUri();
 
+    /**
+     * Creates a URIBuilder with all the information common to all arXiv requests supported by this harvester.  Used in
+     * the specific implementations of getUri().
+     */
+    protected final URIBuilder getIncompleteUriBuilder() {
+        return new URIBuilder()
+                .setScheme(SCHEME)
+                .setHost(HOST)
+                .setPath(PATH)
+                .setParameter("verb", this.getVerb().getUriFormat())
+                .setParameter("metadataPrefix", METADATA_PREFIX);
+    }
 }

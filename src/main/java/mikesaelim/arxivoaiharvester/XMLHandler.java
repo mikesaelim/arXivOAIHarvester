@@ -6,7 +6,6 @@ import com.google.common.collect.Sets;
 import lombok.NonNull;
 import mikesaelim.arxivoaiharvester.data.ArticleMetadata;
 import mikesaelim.arxivoaiharvester.data.ArticleVersion;
-import mikesaelim.arxivoaiharvester.io.ArxivResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,18 +25,17 @@ import java.util.*;
  * the "arXivRaw" metadata format (the current version of that is 2014-06-24).
  *
  * This handler is meant to be used with a SAXParser, which parses an InputStream and sends the information to this
- * handler.  This handler then parses this information and stores it in a ArxivResponseBuilder.  Example:
+ * handler.  This handler then parses this information and stores it in a ParsedXMLResponse.  Example:
  * <pre>{@code
- *    ArxivResponse.ArxivResponseBuilder responseBuilder = ArxivResponse.builder();
+ *    ParsedXmlResponse parsedXmlResponse = new ParsedXmlResponse();
  *    try {
- *        saxParser.parse(inputStream, new XMLHandler(responseBuilder));
+ *        saxParser.parse(inputStream, new XMLHandler(parsedXmlResponse));
  *    } catch (Exception e) { ... }
- *    ArxivResponse response = responseBuilder.build();
  * }</pre>
  *
- * ArxivResponse, ArticleMetadata, and ArticleVersion are all immutable types, so they are constructed via builders.
- * Additionally, we have to deal with a corrupted XML stream that contains spurious line breaks in the middle of some
- * of the string values.  For this reason, we normalize the string values that we extract.
+ * ArticleMetadata and ArticleVersion are immutable types, so they are constructed via builders.  Additionally, we have
+ * to deal with a corrupted XML stream that contains spurious line breaks in the middle of some of the string values.
+ * For this reason, we normalize the string values that we extract.
  *
  * Broad unit tests of this class's functionality are included in the unit tests of ArxivOAIHarvester.
  *
@@ -51,27 +49,9 @@ class XMLHandler extends DefaultHandler {
     Logger log = LoggerFactory.getLogger(XMLHandler.class);
 
     /**
-     * This is the final output of the parsing process.
+     * This is the final output, which gets filled as the XML is parsed.
      */
-    private ArxivResponse.ArxivResponseBuilder responseBuilder;
-
-    /*
-     *        These are the constituents of the ArxivResponse:
-     */
-    /**
-     * DateTime of the response.  The OAI v2.0 schema requires this to be filled before the records.
-     */
-    private ZonedDateTime responseDate;
-    /**
-     * This list of records gets appended as we parse the XML document.
-     */
-    private List<ArticleMetadata> records;
-    /**
-     * Resumption token information.
-     */
-    private String resumptionToken;
-    private Integer cursor;
-    private Integer completeListSize;
+    private ParsedXmlResponse parsedXmlResponse;
 
     /*
      *        These are objects that get filled anew for every record the parser encounters:
@@ -129,10 +109,11 @@ class XMLHandler extends DefaultHandler {
 
 
     /**
-     * @param responseBuilder ArxivReponse builder that will contain the output of this parsing
+     * @param parsedXmlResponse container for the parsing output
      */
-    public XMLHandler (@NonNull ArxivResponse.ArxivResponseBuilder responseBuilder) {
-        this.responseBuilder = responseBuilder;
+    public XMLHandler (@NonNull ParsedXmlResponse parsedXmlResponse) {
+        this.parsedXmlResponse = parsedXmlResponse;
+        this.parsedXmlResponse.setRecords(Lists.newArrayList());
     }
 
     /**
@@ -157,10 +138,10 @@ class XMLHandler extends DefaultHandler {
         switch (qName) {
             case "GetRecord":
             case "ListRecords":
-                records = Lists.newLinkedList();
+                // Do nothing - parsedXmlResponse.records has already been initialized in the constructor
                 break;
             case "record":
-                currentRecordBuilder = ArticleMetadata.builder().retrievalDateTime(responseDate);
+                currentRecordBuilder = ArticleMetadata.builder().retrievalDateTime(parsedXmlResponse.getResponseDate());
                 sets = Sets.newHashSet();
                 versions = Sets.newHashSet();
                 currentIdentifier = null;
@@ -173,9 +154,10 @@ class XMLHandler extends DefaultHandler {
                         .versionNumber(parseVersionNumber(attributes));
                 break;
             case "resumptionToken":
-                cursor = parseCursor(attributes);
-                completeListSize = parseCompleteListSize(attributes);
-                // The lack of a break statement here is intentional
+                parsedXmlResponse.setCursor(parseCursor(attributes));
+                parsedXmlResponse.setCompleteListSize(parseCompleteListSize(attributes));
+                currentLeafValueBuilder = new StringBuilder();
+                break;
             default:
                 currentLeafValueBuilder = new StringBuilder();
         }
@@ -200,15 +182,11 @@ class XMLHandler extends DefaultHandler {
         switch (qName) {
             case "GetRecord":
             case "ListRecords":
-                responseBuilder.responseDate(responseDate)
-                        .records(records)
-                        .resumptionToken(resumptionToken)
-                        .cursor(cursor)
-                        .completeListSize(completeListSize);
+                // Do nothing - data has already been stored in parsedXmlResponse
                 break;
             case "record":
                 currentRecordBuilder.sets(sets).versions(versions);
-                records.add(currentRecordBuilder.build());
+                parsedXmlResponse.getRecords().add(currentRecordBuilder.build());
                 currentIdentifier = null;
                 break;
             case "version":
@@ -217,10 +195,10 @@ class XMLHandler extends DefaultHandler {
 
             // Begin leaf nodes - their values are retrieved from getCurrentValue()
             case "responseDate":
-                responseDate = parseResponseDate(getCurrentValue());
+                parsedXmlResponse.setResponseDate(parseResponseDate(getCurrentValue()));
                 break;
             case "resumptionToken":
-                resumptionToken = getCurrentValue();
+                parsedXmlResponse.setResumptionToken(getCurrentValue());
                 break;
 
             // Begin record fields

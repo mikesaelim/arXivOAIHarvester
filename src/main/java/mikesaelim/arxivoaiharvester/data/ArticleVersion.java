@@ -30,7 +30,7 @@ public class ArticleVersion {
     private String size;
 
     /**
-     * Source type of this version, for example, "D".
+     * Source type code of this version, for example, "D".
      */
     private String sourceType;
 

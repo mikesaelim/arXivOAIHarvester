@@ -1,7 +1,6 @@
 package mikesaelim.arxivoaiharvester;
 
 import org.xml.sax.SAXException;
-import mikesaelim.arxivoaiharvester.io.ArxivResponse;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -22,14 +21,14 @@ public class XMLHandlerTest {
     private XMLHandler xmlHandler;
 
     @Mock
-    private ArxivResponse.ArxivResponseBuilder responseBuilder;
+    private ParsedXmlResponse parsedXmlResponse;
     @Mock
     private Attributes attributes;
 
     @Before
     public void setUp() {
         initMocks(this);
-        xmlHandler = new XMLHandler(responseBuilder);
+        xmlHandler = new XMLHandler(parsedXmlResponse);
     }
 
     @Test

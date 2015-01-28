@@ -2,7 +2,6 @@ package mikesaelim.arxivoaiharvester.io;
 
 import lombok.Getter;
 import lombok.NonNull;
-import org.apache.http.client.utils.URIBuilder;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -48,12 +47,7 @@ public class ArxivGetRecordRequest extends ArxivRequest {
     }
 
     private URI constructURI() throws URISyntaxException {
-        return new URIBuilder()
-                .setScheme("http")
-                .setHost(HOST)
-                .setPath(PATH)
-                .setParameter("verb", this.getVerb().getUriFormat())
-                .setParameter("metadataPrefix", METADATA_PREFIX)
+        return getIncompleteUriBuilder()
                 .setParameter("identifier", identifier)
                 .build();
     }
