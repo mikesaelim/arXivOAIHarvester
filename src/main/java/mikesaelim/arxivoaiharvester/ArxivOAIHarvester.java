@@ -18,6 +18,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 
 /**
  * TODO: big-ass description, javadoc on methods
@@ -33,7 +34,7 @@ public class ArxivOAIHarvester {
 
     private final ArxivRequest arxivRequest;
 
-    private String resumptionToken;
+    private URI nextRequestUri;
     private Integer currentPosition = 0;  // TODO: javadoc - number of records already returned = index of next record to be returned since start from 0
     private Integer completeSize;         // TODO: javadoc - complete size of the list
     // TODO: other fields for flow control
@@ -42,8 +43,8 @@ public class ArxivOAIHarvester {
             throws ParserConfigurationException, SAXException{
         parser = SAXParserFactory.newInstance().newSAXParser();
         this.httpClient = httpClient;
-
         this.arxivRequest = arxivRequest;
+        this.nextRequestUri = arxivRequest.getInitialUri();
     }
 
     // This takes some time; it's implemented synchronously, and it's up to the user to write an asynchronous call if he/she wants one.
@@ -52,7 +53,7 @@ public class ArxivOAIHarvester {
 
         log.info("Sending request to arXiv OAI repository: {}", arxivRequest.getInitialUri());
 
-        HttpGet httpRequest = new HttpGet(arxivRequest.getInitialUri());
+        HttpGet httpRequest = new HttpGet(nextRequestUri);
         httpRequest.addHeader("User-Agent", arxivRequest.getUserAgentHeader());
         httpRequest.addHeader("From", arxivRequest.getFromHeader());
 
@@ -82,7 +83,9 @@ public class ArxivOAIHarvester {
                 .records(ImmutableList.copyOf(parsedXmlResponse.getRecords()))
                 .build();
 
-        resumptionToken = parsedXmlResponse.getResumptionToken();
+        nextRequestUri = parsedXmlResponse.getResumptionToken() != null ?
+            arxivRequest.getResumptionURI(parsedXmlResponse.getResumptionToken()) : null;
+
         // TODO: ensure consistency with cursor?
         currentPosition += parsedXmlResponse.getRecords().size();
         // TODO: perhaps only set this on first response

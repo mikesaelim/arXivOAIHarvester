@@ -1,6 +1,7 @@
 package mikesaelim.arxivoaiharvester.io;
 
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import org.apache.http.client.utils.URIBuilder;
 
@@ -48,9 +49,10 @@ public abstract class ArxivRequest {
      * Generate a subsequent URI that resumes a request.
      * @param resumptionToken resumption token included at the end of the last response from the arXiv OAI repository
      * @return resumption request URI
+     * @throws java.lang.NullPointerException if resumptionToken is null
      * @throws URISyntaxException if resumptionToken makes an invalid URI
      */
-    public URI getResumptionURI(String resumptionToken) throws URISyntaxException {
+    public URI getResumptionURI(@NonNull String resumptionToken) throws URISyntaxException {
         return new URIBuilder()
                 .setScheme(SCHEME)
                 .setHost(HOST)
