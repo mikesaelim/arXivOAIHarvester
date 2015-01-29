@@ -5,6 +5,7 @@ import lombok.Setter;
 import org.apache.http.client.utils.URIBuilder;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * The complete set of information needed to construct a request to send to the arXiv OAI repository.  There are different
@@ -38,16 +39,32 @@ public abstract class ArxivRequest {
     }
 
     /**
-     * Generate the request URI.
-     * @return request URI
+     * Generate the initial request URI.
+     * @return initial request URI
      */
-    public abstract URI getUri();
+    public abstract URI getInitialUri();
 
     /**
-     * Creates a URIBuilder with all the information common to all arXiv requests supported by this harvester.  Used in
-     * the specific implementations of getUri().
+     * Generate a subsequent URI that resumes a request.
+     * @param resumptionToken resumption token included at the end of the last response from the arXiv OAI repository
+     * @return resumption request URI
+     * @throws URISyntaxException if resumptionToken makes an invalid URI
      */
-    protected final URIBuilder getIncompleteUriBuilder() {
+    public URI getResumptionURI(String resumptionToken) throws URISyntaxException {
+        return new URIBuilder()
+                .setScheme(SCHEME)
+                .setHost(HOST)
+                .setPath(PATH)
+                .setParameter("verb", this.getVerb().getUriFormat())
+                .setParameter("resumptionToken", resumptionToken)
+                .build();
+    }
+
+    /**
+     * Creates a URIBuilder with all the information for initial request URIs common to all arXiv requests supported by
+     * this harvester.  Used in the specific implementations of getInitialUri().
+     */
+    protected final URIBuilder getInitialUriBuilder() {
         return new URIBuilder()
                 .setScheme(SCHEME)
                 .setHost(HOST)

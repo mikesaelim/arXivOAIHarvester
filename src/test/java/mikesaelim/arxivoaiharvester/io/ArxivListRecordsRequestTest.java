@@ -17,7 +17,7 @@ public class ArxivListRecordsRequestTest {
         ArxivListRecordsRequest request = new ArxivListRecordsRequest(fromDate, untilDate, setSpec);
 
         assertEquals("http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=arXivRaw&from=2014-11-25&until=2015-01-05&setSpec=physics",
-                request.getUri().toString());
+                request.getInitialUri().toString());
     }
 
     @Test
@@ -28,7 +28,7 @@ public class ArxivListRecordsRequestTest {
         ArxivListRecordsRequest request = new ArxivListRecordsRequest(fromDate, null, setSpec);
 
         assertEquals("http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=arXivRaw&from=2014-11-25&setSpec=physics",
-                request.getUri().toString());
+                request.getInitialUri().toString());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -37,6 +37,14 @@ public class ArxivListRecordsRequestTest {
         LocalDate untilDate = LocalDate.of(2014, 11, 24);
 
         new ArxivListRecordsRequest(fromDate, untilDate, null);
+    }
+
+    @Test
+    public void testGetResumptionUri() throws Exception {
+        ArxivListRecordsRequest request = new ArxivListRecordsRequest(null, null, "whatever");
+
+        assertEquals("http://export.arxiv.org/oai2?verb=ListRecords&resumptionToken=something",
+                request.getResumptionURI("something").toString());
     }
 
 }

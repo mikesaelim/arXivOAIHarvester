@@ -50,9 +50,9 @@ public class ArxivOAIHarvester {
     public ArxivResponse getNextBatch() throws IOException, ClientProtocolException, Exception {
         // TODO: the Exception in the throws clause is temporary, only used until we handle response codes and flow control properly
 
-        log.info("Sending request to arXiv OAI repository: {}", arxivRequest.getUri());
+        log.info("Sending request to arXiv OAI repository: {}", arxivRequest.getInitialUri());
 
-        HttpGet httpRequest = new HttpGet(arxivRequest.getUri());
+        HttpGet httpRequest = new HttpGet(arxivRequest.getInitialUri());
         httpRequest.addHeader("User-Agent", arxivRequest.getUserAgentHeader());
         httpRequest.addHeader("From", arxivRequest.getFromHeader());
 
@@ -69,11 +69,11 @@ public class ArxivOAIHarvester {
 
             // TODO: implement resumption token storage and other flow control stuff
             // TODO: handle parsing SAXExceptions?
-            log.info("Parsing response from arXiv OAI repository for request {}", arxivRequest.getUri());
+            log.info("Parsing response from arXiv OAI repository for request {}", arxivRequest.getInitialUri());
 
             parsedXmlResponse = parseXMLStream(httpResponse.getEntity().getContent());
 
-            log.info("Response parsed for request {}", arxivRequest.getUri());
+            log.info("Response parsed for request {}", arxivRequest.getInitialUri());
         }
 
         ArxivResponse arxivResponse = ArxivResponse.builder()

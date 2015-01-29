@@ -25,14 +25,14 @@ public class ArxivGetRecordRequest extends ArxivRequest {
     private final String identifier;
 
     /**
-     * The resulting URI.
+     * The URI for the initial request to the repository, created from these settings.
      */
-    private final URI uri;
+    private final URI initialUri;
 
     /**
      * Constructs an ArxivGetRecordRequest object.
      * @param identifier unique record identifier, with or without the "oai:arXiv.org:" prefix.
-     * @throws URISyntaxException if the input did not create a valid URI
+     * @throws URISyntaxException if the input did not create a valid initial URI
      */
     public ArxivGetRecordRequest(@NonNull String identifier) throws URISyntaxException {
         super(Verb.GET_RECORD);
@@ -43,11 +43,11 @@ public class ArxivGetRecordRequest extends ArxivRequest {
             this.identifier = "oai:arXiv.org:" + identifier;
         }
 
-        uri = constructURI();
+        initialUri = constructInitialURI();
     }
 
-    private URI constructURI() throws URISyntaxException {
-        return getIncompleteUriBuilder()
+    private URI constructInitialURI() throws URISyntaxException {
+        return getInitialUriBuilder()
                 .setParameter("identifier", identifier)
                 .build();
     }

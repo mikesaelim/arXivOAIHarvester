@@ -31,14 +31,14 @@ public class ArxivListRecordsRequest extends ArxivRequest {
     private final String setSpec;
 
     /**
-     * The resulting URI.
+     * The URI for the initial request to the repository, created from these settings.
      */
-    private final URI uri;
+    private final URI initialUri;
 
     /**
      * Constructs an ArxivListRecordsRequest object.  All parameters are optional.
      * @throws IllegalArgumentException if fromDate is after untilDate.
-     * @throws URISyntaxException if the input did not create a valid URI
+     * @throws URISyntaxException if the input did not create a valid initial URI
 
      */
     public ArxivListRecordsRequest(LocalDate fromDate, LocalDate untilDate, String setSpec)
@@ -52,11 +52,11 @@ public class ArxivListRecordsRequest extends ArxivRequest {
             throw new IllegalArgumentException("tried to create ArxivListRecordsRequest with invalid datestamp range");
         }
 
-        uri = constructURI();
+        initialUri = constructInitialURI();
     }
 
-    private URI constructURI() throws URISyntaxException {
-        URIBuilder uriBuilder = getIncompleteUriBuilder();
+    private URI constructInitialURI() throws URISyntaxException {
+        URIBuilder uriBuilder = getInitialUriBuilder();
         if (fromDate != null) {
             uriBuilder.addParameter("from", fromDate.toString());
         }
