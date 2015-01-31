@@ -21,7 +21,7 @@ import java.io.InputStream;
 import java.net.URI;
 
 /**
- * TODO: big-ass description, javadoc on methods
+ * TODO: big-ass description, javadoc on methods; methods are NOT thread-safe
  *
  * Created by Mike Saelim on 1/3/15.
  */
@@ -35,8 +35,8 @@ public class ArxivOAIHarvester {
     private final ArxivRequest arxivRequest;
 
     private URI nextRequestUri;
-    private Integer currentPosition = 0;  // TODO: javadoc - number of records already returned = index of next record to be returned since start from 0
-    private Integer completeSize;         // TODO: javadoc - complete size of the list
+    private Integer currentPosition = 0;
+    private Integer completeSize;
     // TODO: other fields for flow control
 
     public ArxivOAIHarvester(CloseableHttpClient httpClient, ArxivRequest arxivRequest)
@@ -104,10 +104,12 @@ public class ArxivOAIHarvester {
         return arxivRequest;
     }
 
+    // TODO: javadoc - number of records already returned = index of next record to be returned since start from 0
     public Integer getCurrentPosition() {
         return currentPosition;
     }
 
+    // TODO: javadoc - complete size of the list
     // Null if not known/valid
     public Integer getCompleteSize() {
         return completeSize;

@@ -23,7 +23,10 @@ public class ArxivResponse {
 
     private ZonedDateTime responseDate;
 
-    // TODO: ERROR INFORMATION
+    /**
+     * Error information.  If the request executed without errors, this will be null.
+     */
+    private ArxivError error;
 
     /**
      * List of records returned by the repository.  It may be empty.  Immutable.

@@ -2,6 +2,7 @@ package mikesaelim.arxivoaiharvester;
 
 import lombok.Data;
 import mikesaelim.arxivoaiharvester.data.ArticleMetadata;
+import mikesaelim.arxivoaiharvester.io.ArxivError;
 
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -16,7 +17,10 @@ class ParsedXmlResponse {
 
     private ZonedDateTime responseDate;
 
-    // TODO: Add error info?
+    /**
+     * Error information.  If parsing executed without errors, this will be null.
+     */
+    private ArxivError error;
 
     /**
      * List of records returned by the repository.  It may be empty.
