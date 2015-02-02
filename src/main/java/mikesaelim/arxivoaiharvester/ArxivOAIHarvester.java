@@ -2,8 +2,11 @@ package mikesaelim.arxivoaiharvester;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import mikesaelim.arxivoaiharvester.io.ArxivError;
 import mikesaelim.arxivoaiharvester.io.ArxivRequest;
 import mikesaelim.arxivoaiharvester.io.ArxivResponse;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -19,9 +22,10 @@ import javax.xml.parsers.SAXParserFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
- * TODO: big-ass description, javadoc on methods; methods are NOT thread-safe
+ * TODO: big-ass description, javadoc on methods; methods are NOT thread-safe; harvester lifecycle and death
  *
  * Created by Mike Saelim on 1/3/15.
  */
@@ -34,70 +38,124 @@ public class ArxivOAIHarvester {
 
     private final ArxivRequest arxivRequest;
 
-    private URI nextRequestUri;
-    private Integer currentPosition = 0;
-    private Integer completeSize;
+    private boolean alive;
+
+    private String nextResumptionToken;
+    private Integer recordsReturned;
+    private Integer batchesReturned;
+    private Integer completeListSize;
     // TODO: other fields for flow control
 
     public ArxivOAIHarvester(CloseableHttpClient httpClient, ArxivRequest arxivRequest)
-            throws ParserConfigurationException, SAXException{
+            throws ParserConfigurationException, SAXException {
         parser = SAXParserFactory.newInstance().newSAXParser();
         this.httpClient = httpClient;
         this.arxivRequest = arxivRequest;
-        this.nextRequestUri = arxivRequest.getInitialUri();
+
+        alive = true;
+        recordsReturned = 0;
+        batchesReturned = 0;
     }
 
     // This takes some time; it's implemented synchronously, and it's up to the user to write an asynchronous call if he/she wants one.
-    public ArxivResponse getNextBatch() throws IOException, ClientProtocolException, Exception {
-        // TODO: the Exception in the throws clause is temporary, only used until we handle response codes and flow control properly
+    // Possible IOException, HttpResponseException, or returns an ArxivResponse with an error description.
+    public ArxivResponse getNextBatch() throws IOException, ClientProtocolException {
+        if (!alive) {
+            return handleError(false, ArxivError.Type.DEAD_HARVESTER,
+                    "Attempt to retrieve the next batch from a dead harvester.");
+        }
 
-        log.info("Sending request to arXiv OAI repository: {}", arxivRequest.getInitialUri());
+        URI nextRequestUri;
+        if (batchesReturned == 0) {
+            nextRequestUri = arxivRequest.getInitialUri();
+        } else {
+            if (StringUtils.isEmpty(nextResumptionToken)) {
+                return handleError(true, ArxivError.Type.INTERNAL_ERROR,
+                        "No resumption token found");
+            } else {
+                try {
+                    nextRequestUri = arxivRequest.getResumptionURI(nextResumptionToken);
+                } catch (URISyntaxException e) {
+                    return handleError(true, ArxivError.Type.INTERNAL_ERROR,
+                            "Resumption token '" + nextResumptionToken + "' created an invalid URI");
+                }
+            }
+        }
 
         HttpGet httpRequest = new HttpGet(nextRequestUri);
         httpRequest.addHeader("User-Agent", arxivRequest.getUserAgentHeader());
         httpRequest.addHeader("From", arxivRequest.getFromHeader());
 
+
+
+
+
+        // TODO: Begin loop for handling 503 here?
+
+        log.info("Sending request to arXiv OAI repository: {}", nextRequestUri);
+
         ParsedXmlResponse parsedXmlResponse;
         try (CloseableHttpResponse httpResponse = httpClient.execute(httpRequest)) {
             int httpStatusCode = httpResponse.getStatusLine().getStatusCode();
 
-            // TODO: handle other response codes
-            if (httpStatusCode != 200) {
-                throw new Exception("Returned status code " + httpStatusCode + ": " +
-                        httpResponse.getStatusLine().getReasonPhrase() + ": " +
-                        EntityUtils.toString(httpResponse.getEntity()));
+            // TODO: handle other response codes?
+            switch (httpStatusCode) {
+                case HttpStatus.SC_OK:
+                    // TODO: implement resumption token storage and other flow control stuff
+                    log.info("Parsing response from arXiv OAI repository for request {}", nextRequestUri);
+
+                    try {
+                        parsedXmlResponse = parseXMLStream(httpResponse.getEntity().getContent());
+                    } catch (SAXException e) {
+                        return handleError(false, ArxivError.Type.PARSE_ERROR, e.toString());
+                    }
+
+                    log.info("Response parsed for request {}", nextRequestUri);
+
+                    break;
+//                case HttpStatus.SC_SERVICE_UNAVAILABLE:
+                    // TODO: Handle 503
+//                    return null;
+                default:
+                    // Unfortunately, we currently aren't prepared to handle other HTTP status codes.  The OAI specs
+                    // don't really say what to do for most of them.  So we log a warning, return an error response,
+                    // and permanently kill the harvester.
+                    return handleError(false, ArxivError.Type.HTTP_ERROR,
+                            new StringBuilder("Returned status code ")
+                                .append(httpStatusCode).append(": ")
+                                .append(httpResponse.getStatusLine().getReasonPhrase()).append(": ")
+                                .append(EntityUtils.toString(httpResponse.getEntity()))
+                                .toString());
             }
-
-            // TODO: implement resumption token storage and other flow control stuff
-            // TODO: handle parsing SAXExceptions?
-            log.info("Parsing response from arXiv OAI repository for request {}", arxivRequest.getInitialUri());
-
-            parsedXmlResponse = parseXMLStream(httpResponse.getEntity().getContent());
-
-            log.info("Response parsed for request {}", arxivRequest.getInitialUri());
         }
 
-        ArxivResponse arxivResponse = ArxivResponse.builder()
+        if (parsedXmlResponse.getError() != null) {
+            return handleError(true, parsedXmlResponse.getError().getErrorType(),
+                    parsedXmlResponse.getError().getErrorMessage());
+        }
+
+        nextResumptionToken = parsedXmlResponse.getResumptionToken();
+        recordsReturned += parsedXmlResponse.getRecords().size();
+        batchesReturned++;
+        if (batchesReturned == 1) {
+            completeListSize = parsedXmlResponse.getCompleteListSize() != null ?
+                    parsedXmlResponse.getCompleteListSize() : parsedXmlResponse.getRecords().size();
+        }
+
+        return ArxivResponse.builder()
                 .arxivRequest(arxivRequest)
                 .responseDate(parsedXmlResponse.getResponseDate())
                 .records(ImmutableList.copyOf(parsedXmlResponse.getRecords()))
                 .build();
 
-        nextRequestUri = parsedXmlResponse.getResumptionToken() != null ?
-            arxivRequest.getResumptionURI(parsedXmlResponse.getResumptionToken()) : null;
 
-        // TODO: ensure consistency with cursor?
-        currentPosition += parsedXmlResponse.getRecords().size();
-        // TODO: perhaps only set this on first response
-        completeSize = parsedXmlResponse.getCompleteListSize() != null ?
-                parsedXmlResponse.getCompleteListSize() : parsedXmlResponse.getRecords().size();
 
-        return arxivResponse;
+
     }
 
-    public boolean hasNextBatch() {
-        // TODO: implement
-        return false;
+    // TODO: javadoc
+    public boolean isAlive() {
+        return alive;
     }
 
     public ArxivRequest getArxivRequest() {
@@ -105,20 +163,48 @@ public class ArxivOAIHarvester {
     }
 
     // TODO: javadoc - number of records already returned = index of next record to be returned since start from 0
-    public Integer getCurrentPosition() {
-        return currentPosition;
+    public Integer getRecordsReturned() {
+        return recordsReturned;
+    }
+
+    // TODO: javadoc - number of batches successfully returned
+    public Integer getBatchesReturned() {
+        return batchesReturned;
     }
 
     // TODO: javadoc - complete size of the list
     // Null if not known/valid
-    public Integer getCompleteSize() {
-        return completeSize;
+    public Integer getCompleteListSize() {
+        return completeListSize;
     }
 
     @VisibleForTesting ParsedXmlResponse parseXMLStream(InputStream inputStream) throws SAXException, IOException {
         ParsedXmlResponse parsedXmlResponse = new ParsedXmlResponse();
         parser.parse(inputStream, new XMLHandler(parsedXmlResponse));
         return parsedXmlResponse;
+    }
+
+    /**
+     * Handle an error encountered when trying to retrieve the next batch of records.  Kills the harvester permanently.
+     * Also logs an error or a warning.
+     * @param shouldLogAsError true if this is log level ERROR, false if this is log level WARN
+     * @param errorType type of ArxivError
+     * @param message message to log and enclose with the ArxivError
+     * @return an ArxivResponse with the corresponding error, to be passed back by the harvester
+     */
+    private ArxivResponse handleError(boolean shouldLogAsError, ArxivError.Type errorType, String message) {
+        alive = false;
+
+        if (shouldLogAsError) {
+            log.error(message);
+        } else {
+            log.warn(message);
+        }
+
+        return ArxivResponse.builder()
+                .arxivRequest(arxivRequest)
+                .error(new ArxivError(errorType, message))
+                .build();
     }
 
 }

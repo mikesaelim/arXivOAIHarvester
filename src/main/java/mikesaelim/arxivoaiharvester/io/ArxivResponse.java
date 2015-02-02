@@ -10,6 +10,8 @@ import java.time.ZonedDateTime;
 /**
  * The information returned by a response from arXiv's OAI repository.  Immutable.
  *
+ * Make sure to check that {@code error == null} before retrieving {@code responseDate} or {@code records}.
+ *
  * Created by Mike Saelim on 1/3/15.
  */
 @Value
@@ -21,15 +23,19 @@ public class ArxivResponse {
      */
     private ArxivRequest arxivRequest;
 
-    private ZonedDateTime responseDate;
-
     /**
      * Error information.  If the request executed without errors, this will be null.
      */
     private ArxivError error;
 
     /**
-     * List of records returned by the repository.  It may be empty.  Immutable.
+     * Response datetime.  It may be null if there was an error executing the request.
+     */
+    private ZonedDateTime responseDate;
+
+    /**
+     * List of records returned by the repository.  It may be null if there was an error executing the request.  It will
+     * be empty if no records were returned.  Immutable.
      */
     private ImmutableList<ArticleMetadata> records;
 

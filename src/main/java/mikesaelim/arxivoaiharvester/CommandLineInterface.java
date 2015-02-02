@@ -85,8 +85,8 @@ public class CommandLineInterface {
         }
 
         System.out.println("Current state of the harvester:");
-        printLine("    Current position: ", harvester.getCurrentPosition());
-        printLine("    Complete list size: ", harvester.getCompleteSize());
+        printLine("    Current position: ", harvester.getRecordsReturned());
+        printLine("    Complete list size: ", harvester.getCompleteListSize());
         System.out.println();
 
 

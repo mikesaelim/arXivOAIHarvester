@@ -11,10 +11,11 @@ import lombok.Value;
 public class ArxivError {
 
     public static enum Type {
-        IO_ERROR,
+        DEAD_HARVESTER,
         HTTP_ERROR,
         TIME_OUT,
         ILLEGAL_ARGUMENT,
+        PARSE_ERROR,
         INTERNAL_ERROR;
     }
 
