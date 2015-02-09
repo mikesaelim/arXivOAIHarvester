@@ -1,5 +1,7 @@
 package mikesaelim.arxivoaiharvester;
 
+import com.google.common.collect.Maps;
+import mikesaelim.arxivoaiharvester.io.ArxivError;
 import org.xml.sax.SAXException;
 import org.junit.Before;
 import org.junit.Test;
@@ -10,6 +12,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.eq;
@@ -30,6 +33,8 @@ public class XMLHandlerTest {
         initMocks(this);
         xmlHandler = new XMLHandler(parsedXmlResponse);
     }
+
+
 
     @Test
     public void testParseVersionNumber() throws Exception {
@@ -59,6 +64,8 @@ public class XMLHandlerTest {
         xmlHandler.parseVersionNumber(attributes);
     }
 
+
+
     @Test
     public void testParseResponseDate() throws Exception {
         String value = "2015-01-06T13:51:59Z";
@@ -71,6 +78,34 @@ public class XMLHandlerTest {
     public void testParseResponseDate_BadFormatShouldThrow() throws Exception {
         xmlHandler.parseResponseDate("2015-01-T13:51:59Z");
     }
+
+
+
+    @Test
+    public void testParseError() throws Exception {
+        Map<String, ArxivError.Type> solutionMap = Maps.newHashMap();
+        solutionMap.put("badArgument", ArxivError.Type.ILLEGAL_ARGUMENT);
+        solutionMap.put("badResumptionToken", ArxivError.Type.INTERNAL_ERROR);
+        solutionMap.put("badVerb", ArxivError.Type.INTERNAL_ERROR);
+        solutionMap.put("cannotDisseminateFormat", ArxivError.Type.INTERNAL_ERROR);
+        solutionMap.put("idDoesNotExist", null);
+        solutionMap.put("noRecordsMatch", null);
+        solutionMap.put("noSetHierarchy", ArxivError.Type.INTERNAL_ERROR);
+        solutionMap.put("wah", null);
+
+        for (String code : solutionMap.keySet()) {
+            when(attributes.getValue(eq("code"))).thenReturn(code);
+
+            ArxivError.Type solution = solutionMap.get(code);
+            if (solution == null) {
+                assertNull(xmlHandler.parseError(attributes));
+            } else {
+                assertEquals(solution, xmlHandler.parseError(attributes).getErrorType());
+            }
+        }
+    }
+
+
 
     @Test
     public void testParseDatestamp() throws Exception {
@@ -85,6 +120,8 @@ public class XMLHandlerTest {
         xmlHandler.parseDatestamp("2015-01-");
     }
 
+
+
     @Test
     public void testParseVersionDate() throws Exception {
         String value = "Fri, 8 Feb 2013 21:00:01 GMT";
@@ -97,6 +134,8 @@ public class XMLHandlerTest {
     public void testParseVersionDate_BadFormatShouldThrow() throws Exception {
         xmlHandler.parseVersionDate("Fri, 8 Feb 2013 21:00:01 GM");
     }
+
+
 
     @Test
     public void testParseCategories() throws Exception {
@@ -119,6 +158,8 @@ public class XMLHandlerTest {
         assertTrue(categories.isEmpty());
     }
 
+
+
     @Test
     public void testParseCursor() throws Exception {
         when(attributes.getValue("cursor")).thenReturn("46");
@@ -133,6 +174,8 @@ public class XMLHandlerTest {
         when(attributes.getValue("cursor")).thenReturn("s");
         assertNull(xmlHandler.parseCursor(attributes));
     }
+
+
 
     @Test
     public void testParseCompleteListSize() throws Exception {

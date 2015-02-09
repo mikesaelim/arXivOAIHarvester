@@ -2,6 +2,7 @@ package mikesaelim.arxivoaiharvester;
 
 import mikesaelim.arxivoaiharvester.data.ArticleMetadata;
 import mikesaelim.arxivoaiharvester.data.ArticleVersion;
+import mikesaelim.arxivoaiharvester.io.ArxivError;
 import mikesaelim.arxivoaiharvester.io.ArxivRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Before;
@@ -34,6 +35,22 @@ public class ArxivOAIHarvesterTest {
     }
 
     @Test
+    public void testParseXmlStream_Error() throws Exception {
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream("SampleErrorResponse.xml");
+
+        ParsedXmlResponse response = harvester.parseXMLStream(inputStream);
+
+        inputStream.close();
+
+        assertEquals(ZonedDateTime.of(2015, 2, 8, 22, 30, 30, 0, ZoneId.of("Z")), response.getResponseDate());
+        assertEquals(ArxivError.Type.INTERNAL_ERROR, response.getError().getErrorType());
+        assertEquals(0, response.getRecords().size());
+        assertNull(response.getResumptionToken());
+        assertNull(response.getCursor());
+        assertNull(response.getCompleteListSize());
+    }
+
+    @Test
     public void testParseXMLStream_GetRecords() throws Exception {
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream("SampleGetRecordResponse.xml");
 
@@ -42,6 +59,7 @@ public class ArxivOAIHarvesterTest {
         inputStream.close();
 
         assertEquals(ZonedDateTime.of(2015, 1, 6, 20, 48, 16, 0, ZoneId.of("Z")), response.getResponseDate());
+        assertNull(response.getError());
         assertNull(response.getResumptionToken());
         assertNull(response.getCursor());
         assertNull(response.getCompleteListSize());
@@ -116,6 +134,7 @@ public class ArxivOAIHarvesterTest {
         inputStream.close();
 
         assertEquals(ZonedDateTime.of(2015, 1, 6, 20, 49, 59, 0, ZoneId.of("Z")), response.getResponseDate());
+        assertNull(response.getError());
         assertEquals("726959|1001", response.getResumptionToken());
         assertEquals(0, response.getCursor().intValue());
         assertEquals(58011, response.getCompleteListSize().intValue());

@@ -1,0 +1,5 @@
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+    <responseDate>2015-02-08T22:30:30Z</responseDate>
+    <request>http://export.arxiv.org/oai2</request>
+    <error code="badVerb">Bad verb. Verb 'wah' not implemented.</error>
+</OAI-PMH>

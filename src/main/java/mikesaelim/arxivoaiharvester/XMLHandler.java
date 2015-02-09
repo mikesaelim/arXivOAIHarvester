@@ -6,6 +6,7 @@ import com.google.common.collect.Sets;
 import lombok.NonNull;
 import mikesaelim.arxivoaiharvester.data.ArticleMetadata;
 import mikesaelim.arxivoaiharvester.data.ArticleVersion;
+import mikesaelim.arxivoaiharvester.io.ArxivError;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,7 +114,14 @@ class XMLHandler extends DefaultHandler {
      */
     public XMLHandler (@NonNull ParsedXmlResponse parsedXmlResponse) {
         this.parsedXmlResponse = parsedXmlResponse;
+
+        // Clear the container, just in case someone input a non-empty one
+        this.parsedXmlResponse.setResponseDate(null);
+        this.parsedXmlResponse.setError(null);
         this.parsedXmlResponse.setRecords(Lists.newArrayList());
+        this.parsedXmlResponse.setResumptionToken(null);
+        this.parsedXmlResponse.setCursor(null);
+        this.parsedXmlResponse.setCompleteListSize(null);
     }
 
     /**
@@ -136,6 +144,9 @@ class XMLHandler extends DefaultHandler {
 
         // Initialize containers as needed
         switch (qName) {
+            case "error":
+                parsedXmlResponse.setError(parseError(attributes));
+                break;
             case "GetRecord":
             case "ListRecords":
                 // Do nothing - parsedXmlResponse.records has already been initialized in the constructor
@@ -348,6 +359,32 @@ class XMLHandler extends DefaultHandler {
                     "' in ISO_OFFSET_DATE_TIME format!");
         }
         return responseDate;
+    }
+
+    /**
+     * Parse the error type from the attributes of the "error" node of an OAI response.  This handles all the OAI-PMH
+     * error codes that can be returned by "GetRecord" and "ListRecords" requests.
+     * @param attributes "error" node attributes
+     * @return error to be returned to the user, or null if there is no error
+     */
+    @VisibleForTesting ArxivError parseError(Attributes attributes) {
+        switch (attributes.getValue("code")) {
+            case "badArgument":
+                return new ArxivError(ArxivError.Type.ILLEGAL_ARGUMENT, "Illegal argument rejected by arXiv OAI repository");
+            case "badResumptionToken":
+                return new ArxivError(ArxivError.Type.INTERNAL_ERROR, "Bad resumption token rejected by arXiv OAI repository");
+            case "badVerb":
+                return new ArxivError(ArxivError.Type.INTERNAL_ERROR, "Bad verb rejected by arXiv OAI repository");
+            case "cannotDisseminateFormat":
+                return new ArxivError(ArxivError.Type.INTERNAL_ERROR, "Bad metadata format rejected by arXiv OAI repository");
+            case "idDoesNotExist":
+            case "noRecordsMatch":
+                return null;  // These are not considered errors in my error system.
+            case "noSetHierarchy":
+                return new ArxivError(ArxivError.Type.INTERNAL_ERROR, "arXiv OAI repository does not support sets");
+            default:
+                return null;
+        }
     }
 
     /**
