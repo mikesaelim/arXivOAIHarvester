@@ -1,5 +1,6 @@
-package io.github.mikesaelim.arxivoaiharvester.io;
+package io.github.mikesaelim.arxivoaiharvester;
 
+import io.github.mikesaelim.arxivoaiharvester.ArxivListRecordsRequest;
 import org.junit.Test;
 
 import java.time.LocalDate;

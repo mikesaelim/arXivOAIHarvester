@@ -1,4 +1,4 @@
-package io.github.mikesaelim.arxivoaiharvester.io;
+package io.github.mikesaelim.arxivoaiharvester;
 
 import com.google.common.collect.ImmutableList;
 import io.github.mikesaelim.arxivoaiharvester.exception.ArxivError;

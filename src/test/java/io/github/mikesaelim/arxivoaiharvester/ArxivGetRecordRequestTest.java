@@ -1,4 +1,4 @@
-package io.github.mikesaelim.arxivoaiharvester.io;
+package io.github.mikesaelim.arxivoaiharvester;
 
 import org.junit.Test;
 
