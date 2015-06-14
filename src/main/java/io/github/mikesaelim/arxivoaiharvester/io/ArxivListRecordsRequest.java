@@ -1,4 +1,4 @@
-package mikesaelim.arxivoaiharvester.io;
+package io.github.mikesaelim.arxivoaiharvester.io;
 
 import lombok.Getter;
 import org.apache.http.client.utils.URIBuilder;

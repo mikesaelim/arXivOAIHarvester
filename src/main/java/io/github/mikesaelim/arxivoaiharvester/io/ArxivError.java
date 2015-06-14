@@ -1,4 +1,4 @@
-package mikesaelim.arxivoaiharvester.io;
+package io.github.mikesaelim.arxivoaiharvester.io;
 
 import lombok.Value;
 
@@ -10,13 +10,13 @@ import lombok.Value;
 @Value
 public class ArxivError {
 
-    public static enum Type {
+    public enum Type {
         DEAD_HARVESTER,
         HTTP_ERROR,
         TIME_OUT,
         ILLEGAL_ARGUMENT,
         PARSE_ERROR,
-        INTERNAL_ERROR;
+        INTERNAL_ERROR
     }
 
     private Type errorType;

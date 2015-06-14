@@ -1,8 +1,8 @@
-package mikesaelim.arxivoaiharvester;
+package io.github.mikesaelim.arxivoaiharvester;
 
 import lombok.Data;
-import mikesaelim.arxivoaiharvester.data.ArticleMetadata;
-import mikesaelim.arxivoaiharvester.io.ArxivError;
+import io.github.mikesaelim.arxivoaiharvester.data.ArticleMetadata;
+import io.github.mikesaelim.arxivoaiharvester.io.ArxivError;
 
 import java.time.ZonedDateTime;
 import java.util.List;

@@ -1,10 +1,10 @@
-package mikesaelim.arxivoaiharvester;
+package io.github.mikesaelim.arxivoaiharvester;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import mikesaelim.arxivoaiharvester.io.ArxivError;
-import mikesaelim.arxivoaiharvester.io.ArxivRequest;
-import mikesaelim.arxivoaiharvester.io.ArxivResponse;
+import io.github.mikesaelim.arxivoaiharvester.io.ArxivError;
+import io.github.mikesaelim.arxivoaiharvester.io.ArxivRequest;
+import io.github.mikesaelim.arxivoaiharvester.io.ArxivResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;

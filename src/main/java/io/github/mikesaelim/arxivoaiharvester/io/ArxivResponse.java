@@ -1,9 +1,9 @@
-package mikesaelim.arxivoaiharvester.io;
+package io.github.mikesaelim.arxivoaiharvester.io;
 
 import com.google.common.collect.ImmutableList;
 import lombok.Value;
 import lombok.experimental.Builder;
-import mikesaelim.arxivoaiharvester.data.ArticleMetadata;
+import io.github.mikesaelim.arxivoaiharvester.data.ArticleMetadata;
 
 import java.time.ZonedDateTime;
 

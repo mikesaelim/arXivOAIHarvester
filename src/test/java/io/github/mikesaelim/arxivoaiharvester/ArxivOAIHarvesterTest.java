@@ -1,9 +1,9 @@
-package mikesaelim.arxivoaiharvester;
+package io.github.mikesaelim.arxivoaiharvester;
 
-import mikesaelim.arxivoaiharvester.data.ArticleMetadata;
-import mikesaelim.arxivoaiharvester.data.ArticleVersion;
-import mikesaelim.arxivoaiharvester.io.ArxivError;
-import mikesaelim.arxivoaiharvester.io.ArxivRequest;
+import io.github.mikesaelim.arxivoaiharvester.data.ArticleMetadata;
+import io.github.mikesaelim.arxivoaiharvester.data.ArticleVersion;
+import io.github.mikesaelim.arxivoaiharvester.io.ArxivError;
+import io.github.mikesaelim.arxivoaiharvester.io.ArxivRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Before;
 import org.junit.Test;

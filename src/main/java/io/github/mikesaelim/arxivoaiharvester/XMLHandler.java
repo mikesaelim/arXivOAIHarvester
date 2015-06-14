@@ -1,12 +1,12 @@
-package mikesaelim.arxivoaiharvester;
+package io.github.mikesaelim.arxivoaiharvester;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import io.github.mikesaelim.arxivoaiharvester.data.ArticleVersion;
+import io.github.mikesaelim.arxivoaiharvester.io.ArxivError;
 import lombok.NonNull;
-import mikesaelim.arxivoaiharvester.data.ArticleMetadata;
-import mikesaelim.arxivoaiharvester.data.ArticleVersion;
-import mikesaelim.arxivoaiharvester.io.ArxivError;
+import io.github.mikesaelim.arxivoaiharvester.data.ArticleMetadata;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -367,7 +367,8 @@ class XMLHandler extends DefaultHandler {
      * @param attributes "error" node attributes
      * @return error to be returned to the user, or null if there is no error
      */
-    @VisibleForTesting ArxivError parseError(Attributes attributes) {
+    @VisibleForTesting
+    ArxivError parseError(Attributes attributes) {
         switch (attributes.getValue("code")) {
             case "badArgument":
                 return new ArxivError(ArxivError.Type.ILLEGAL_ARGUMENT, "Illegal argument rejected by arXiv OAI repository");

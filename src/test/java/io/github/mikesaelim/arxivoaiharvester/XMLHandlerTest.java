@@ -1,7 +1,7 @@
-package mikesaelim.arxivoaiharvester;
+package io.github.mikesaelim.arxivoaiharvester;
 
 import com.google.common.collect.Maps;
-import mikesaelim.arxivoaiharvester.io.ArxivError;
+import io.github.mikesaelim.arxivoaiharvester.io.ArxivError;
 import org.xml.sax.SAXException;
 import org.junit.Before;
 import org.junit.Test;
