@@ -1,10 +1,10 @@
-package io.github.mikesaelim.arxivoaiharvester;
+package io.github.mikesaelim.arxivoaiharvester.xml;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import io.github.mikesaelim.arxivoaiharvester.data.ArticleVersion;
-import io.github.mikesaelim.arxivoaiharvester.io.ArxivError;
+import io.github.mikesaelim.arxivoaiharvester.exception.ArxivError;
 import lombok.NonNull;
 import io.github.mikesaelim.arxivoaiharvester.data.ArticleMetadata;
 import org.apache.commons.lang3.StringUtils;
@@ -39,10 +39,8 @@ import java.util.*;
  * For this reason, we normalize the string values that we extract.
  *
  * Broad unit tests of this class's functionality are included in the unit tests of ArxivOAIHarvester.
- *
- * Created by Mike Saelim on 1/5/15.
  */
-class XMLHandler extends DefaultHandler {
+public class XMLHandler extends DefaultHandler {
 
     // TODO: handle warnings, errors, etc. from the parser
     // TODO: handle error responses from the repository

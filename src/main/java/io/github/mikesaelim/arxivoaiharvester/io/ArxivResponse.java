@@ -1,6 +1,7 @@
 package io.github.mikesaelim.arxivoaiharvester.io;
 
 import com.google.common.collect.ImmutableList;
+import io.github.mikesaelim.arxivoaiharvester.exception.ArxivError;
 import lombok.Value;
 import lombok.experimental.Builder;
 import io.github.mikesaelim.arxivoaiharvester.data.ArticleMetadata;
@@ -11,8 +12,6 @@ import java.time.ZonedDateTime;
  * The information returned by a response from arXiv's OAI repository.  Immutable.
  *
  * Make sure to check that {@code error == null} before retrieving {@code responseDate} or {@code records}.
- *
- * Created by Mike Saelim on 1/3/15.
  */
 @Value
 @Builder

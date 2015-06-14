@@ -15,8 +15,7 @@ import java.util.List;
 import java.util.Scanner;
 
 /**
- *
- * Created by Mike Saelim on 1/11/15.
+ * TODO javadoc
  */
 public class CommandLineInterface {
 

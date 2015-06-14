@@ -11,8 +11,6 @@ import java.net.URISyntaxException;
 /**
  * The complete set of information needed to construct a request to send to the arXiv OAI repository.  There are different
  * implementations of this class for different request verbs.
- *
- * Created by Mike Saelim on 1/3/15.
  */
 @Getter
 @Setter

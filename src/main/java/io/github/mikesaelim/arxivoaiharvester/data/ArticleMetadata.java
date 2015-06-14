@@ -11,8 +11,6 @@ import java.util.Set;
 /**
  * Metadata for an article, based on all the data returned in the OAI record.  If a field was not included in the OAI
  * response for this record, it is null.  Immutable.
- *
- * Created by Mike Saelim on 1/3/15.
  */
 @Value
 @Builder

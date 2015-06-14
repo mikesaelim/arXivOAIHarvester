@@ -7,8 +7,6 @@ import java.time.ZonedDateTime;
 
 /**
  * Data for a version of an article.  Immutable.
- *
- * Created by Mike Saelim on 1/4/15.
  */
 @Value
 @Builder

@@ -2,8 +2,6 @@ package io.github.mikesaelim.arxivoaiharvester.io;
 
 /**
  * OAI verbs, defined in the OAI-PMH specification, that are supported by this library.
- *
- * Created by Mike Saelim on 1/3/15.
  */
 public enum Verb {
     GET_RECORD("GetRecord"),

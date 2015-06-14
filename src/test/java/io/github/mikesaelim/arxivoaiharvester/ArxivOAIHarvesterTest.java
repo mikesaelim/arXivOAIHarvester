@@ -2,8 +2,9 @@ package io.github.mikesaelim.arxivoaiharvester;
 
 import io.github.mikesaelim.arxivoaiharvester.data.ArticleMetadata;
 import io.github.mikesaelim.arxivoaiharvester.data.ArticleVersion;
-import io.github.mikesaelim.arxivoaiharvester.io.ArxivError;
+import io.github.mikesaelim.arxivoaiharvester.exception.ArxivError;
 import io.github.mikesaelim.arxivoaiharvester.io.ArxivRequest;
+import io.github.mikesaelim.arxivoaiharvester.xml.ParsedXmlResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Before;
 import org.junit.Test;

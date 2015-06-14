@@ -9,8 +9,6 @@ import java.time.LocalDate;
 
 /**
  * An ArxivRequest for the ListRecords verb.  This request is used to retrieve a range of records between two datestamps.
- *
- * Created by Mike Saelim on 1/5/15.
  */
 @Getter
 public class ArxivListRecordsRequest extends ArxivRequest {

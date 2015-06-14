@@ -2,9 +2,11 @@ package io.github.mikesaelim.arxivoaiharvester;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import io.github.mikesaelim.arxivoaiharvester.io.ArxivError;
+import io.github.mikesaelim.arxivoaiharvester.exception.ArxivError;
 import io.github.mikesaelim.arxivoaiharvester.io.ArxivRequest;
 import io.github.mikesaelim.arxivoaiharvester.io.ArxivResponse;
+import io.github.mikesaelim.arxivoaiharvester.xml.ParsedXmlResponse;
+import io.github.mikesaelim.arxivoaiharvester.xml.XMLHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
@@ -26,8 +28,6 @@ import java.net.URISyntaxException;
 
 /**
  * TODO: big-ass description, javadoc on methods; methods are NOT thread-safe; harvester lifecycle and death
- *
- * Created by Mike Saelim on 1/3/15.
  */
 public class ArxivOAIHarvester {
 
@@ -59,7 +59,7 @@ public class ArxivOAIHarvester {
 
     // This takes some time; it's implemented synchronously, and it's up to the user to write an asynchronous call if he/she wants one.
     // Possible IOException, HttpResponseException, or returns an ArxivResponse with an error description.
-    public ArxivResponse getNextBatch() throws IOException, ClientProtocolException {
+    public ArxivResponse getNextBatch() throws IOException {
         if (!alive) {
             return handleError(false, ArxivError.Type.DEAD_HARVESTER,
                     "Attempt to retrieve the next batch from a dead harvester.");

@@ -1,19 +1,17 @@
-package io.github.mikesaelim.arxivoaiharvester;
+package io.github.mikesaelim.arxivoaiharvester.xml;
 
 import lombok.Data;
 import io.github.mikesaelim.arxivoaiharvester.data.ArticleMetadata;
-import io.github.mikesaelim.arxivoaiharvester.io.ArxivError;
+import io.github.mikesaelim.arxivoaiharvester.exception.ArxivError;
 
 import java.time.ZonedDateTime;
 import java.util.List;
 
 /**
  * The information parsed from the XML response from arXiv's OAI repository.
- *
- * Created by Mike Saelim on 1/27/15.
  */
 @Data
-class ParsedXmlResponse {
+public class ParsedXmlResponse {
 
     private ZonedDateTime responseDate;
 

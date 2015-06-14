@@ -1,11 +1,9 @@
-package io.github.mikesaelim.arxivoaiharvester.io;
+package io.github.mikesaelim.arxivoaiharvester.exception;
 
 import lombok.Value;
 
 /**
  * Information on what kind of error occurred when the user requested the next batch of records.
- *
- * Created by donerkebab on 1/31/15.
  */
 @Value
 public class ArxivError {

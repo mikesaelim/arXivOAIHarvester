@@ -13,8 +13,6 @@ import java.net.URISyntaxException;
  * arXiv identifiers follow the format "oai:arXiv.org:nucl-ex/0511023", or "oai:arXiv.org:1302.2146", or
  * "oai:arXiv.org:1501.00001".  However, the constructor will also accept identifiers without the "oai:arXiv.org"
  * prefix, and convert them automatically.
- *
- * Created by Mike Saelim on 1/5/15.
  */
 @Getter
 public class ArxivGetRecordRequest extends ArxivRequest {
