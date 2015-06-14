@@ -1,4 +1,4 @@
-package io.github.mikesaelim.arxivoaiharvester.data;
+package io.github.mikesaelim.arxivoaiharvester.model.data;
 
 import lombok.Value;
 import lombok.experimental.Builder;

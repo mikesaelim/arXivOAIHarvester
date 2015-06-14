@@ -1,7 +1,11 @@
 package io.github.mikesaelim.arxivoaiharvester;
 
-import io.github.mikesaelim.arxivoaiharvester.data.ArticleMetadata;
-import io.github.mikesaelim.arxivoaiharvester.data.ArticleVersion;
+import io.github.mikesaelim.arxivoaiharvester.model.ArxivGetRecordRequest;
+import io.github.mikesaelim.arxivoaiharvester.model.ArxivListRecordsRequest;
+import io.github.mikesaelim.arxivoaiharvester.model.ArxivRequest;
+import io.github.mikesaelim.arxivoaiharvester.model.ArxivResponse;
+import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
+import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleVersion;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 

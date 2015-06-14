@@ -3,10 +3,10 @@ package io.github.mikesaelim.arxivoaiharvester.xml;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import io.github.mikesaelim.arxivoaiharvester.data.ArticleVersion;
 import io.github.mikesaelim.arxivoaiharvester.exception.ArxivError;
+import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
+import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleVersion;
 import lombok.NonNull;
-import io.github.mikesaelim.arxivoaiharvester.data.ArticleMetadata;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +18,9 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.*;
+import java.util.List;
+import java.util.Set;
+import java.util.Stack;
 
 /**
  * This is the handler used to parse the XML response of arXiv's OAI repository.  It is written to be compatible with

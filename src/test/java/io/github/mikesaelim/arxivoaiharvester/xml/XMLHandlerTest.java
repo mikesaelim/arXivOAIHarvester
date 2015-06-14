@@ -2,13 +2,11 @@ package io.github.mikesaelim.arxivoaiharvester.xml;
 
 import com.google.common.collect.Maps;
 import io.github.mikesaelim.arxivoaiharvester.exception.ArxivError;
-import io.github.mikesaelim.arxivoaiharvester.xml.ParsedXmlResponse;
-import io.github.mikesaelim.arxivoaiharvester.xml.XMLHandler;
-import org.xml.sax.SAXException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
 
 import java.time.LocalDate;
 import java.time.ZoneId;

@@ -1,11 +1,10 @@
-package io.github.mikesaelim.arxivoaiharvester;
+package io.github.mikesaelim.arxivoaiharvester.model;
 
-import io.github.mikesaelim.arxivoaiharvester.ArxivListRecordsRequest;
 import org.junit.Test;
 
 import java.time.LocalDate;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class ArxivListRecordsRequestTest {
 

@@ -3,6 +3,8 @@ package io.github.mikesaelim.arxivoaiharvester;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import io.github.mikesaelim.arxivoaiharvester.exception.ArxivError;
+import io.github.mikesaelim.arxivoaiharvester.model.ArxivRequest;
+import io.github.mikesaelim.arxivoaiharvester.model.ArxivResponse;
 import io.github.mikesaelim.arxivoaiharvester.xml.ParsedXmlResponse;
 import io.github.mikesaelim.arxivoaiharvester.xml.XMLHandler;
 import org.apache.commons.lang3.StringUtils;

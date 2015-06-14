@@ -1,10 +1,10 @@
-package io.github.mikesaelim.arxivoaiharvester;
+package io.github.mikesaelim.arxivoaiharvester.model;
 
 import com.google.common.collect.ImmutableList;
 import io.github.mikesaelim.arxivoaiharvester.exception.ArxivError;
+import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
 import lombok.Value;
 import lombok.experimental.Builder;
-import io.github.mikesaelim.arxivoaiharvester.data.ArticleMetadata;
 
 import java.time.ZonedDateTime;
 

@@ -1,4 +1,4 @@
-package io.github.mikesaelim.arxivoaiharvester;
+package io.github.mikesaelim.arxivoaiharvester.model;
 
 /**
  * OAI verbs, defined in the OAI-PMH specification, that are supported by this library.
