@@ -1,6 +1,8 @@
 package io.github.mikesaelim.arxivoaiharvester.model;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 import org.apache.http.client.utils.URIBuilder;
 
 import java.net.URI;
@@ -8,10 +10,16 @@ import java.net.URISyntaxException;
 import java.time.LocalDate;
 
 /**
- * An ArxivRequest for the ListRecords verb.  This request is used to retrieve a range of records between two datestamps.
+ * A ListRecords request, used to retrieve a range of records between two datestamps.
+ *
+ * Note that ListRecords responses may be paginated.  This class only represents the initial request to the repository,
+ * and subsequent pages are retrieved by sending {@link ResumeListRecordsRequest}s to the harvester, which contain the
+ * resumption token sent back by the last response.
  */
 @Getter
-public class ArxivListRecordsRequest extends ArxivRequest {
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+public class ListRecordsRequest extends ArxivRequest {
 
     /**
      * Optional lower bound of the datestamp range.  If null, the range is unbounded from below.
@@ -31,38 +39,40 @@ public class ArxivListRecordsRequest extends ArxivRequest {
     /**
      * The URI for the initial request to the repository, created from these settings.
      */
-    private final URI initialUri;
+    private final URI uri;
 
     /**
-     * Constructs an ArxivListRecordsRequest object.  All parameters are optional.
+     * Constructs a ListRecordsRequest object.  All parameters are optional.
      * @throws IllegalArgumentException if fromDate is after untilDate.
-     * @throws URISyntaxException if the input did not create a valid initial URI
-
+     * @throws URISyntaxException if the input did not create a valid URI
      */
-    public ArxivListRecordsRequest(LocalDate fromDate, LocalDate untilDate, String setSpec)
+    public ListRecordsRequest(LocalDate fromDate, LocalDate untilDate, String setSpec)
             throws IllegalArgumentException, URISyntaxException {
         super(Verb.LIST_RECORDS);
+
         this.fromDate = fromDate;
         this.untilDate = untilDate;
         this.setSpec = setSpec;
 
         if (fromDate != null && untilDate != null && fromDate.isAfter(untilDate)) {
-            throw new IllegalArgumentException("tried to create ArxivListRecordsRequest with invalid datestamp range");
+            throw new IllegalArgumentException("tried to create ListRecordsRequest with invalid datestamp range");
         }
 
-        initialUri = constructInitialURI();
+        uri = constructURI();
     }
 
-    private URI constructInitialURI() throws URISyntaxException {
-        URIBuilder uriBuilder = getInitialUriBuilder();
+    private URI constructURI() throws URISyntaxException {
+        URIBuilder uriBuilder = getUriBuilder()
+                .setParameter("metadataPrefix", METADATA_PREFIX);
+
         if (fromDate != null) {
-            uriBuilder.addParameter("from", fromDate.toString());
+            uriBuilder.setParameter("from", fromDate.toString());
         }
         if (untilDate != null) {
-            uriBuilder.addParameter("until", untilDate.toString());
+            uriBuilder.setParameter("until", untilDate.toString());
         }
         if (setSpec != null) {
-            uriBuilder.addParameter("setSpec", setSpec);
+            uriBuilder.setParameter("setSpec", setSpec);
         }
 
         return uriBuilder.build();

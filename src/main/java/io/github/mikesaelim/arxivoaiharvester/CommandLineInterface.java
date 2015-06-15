@@ -1,7 +1,7 @@
 package io.github.mikesaelim.arxivoaiharvester;
 
-import io.github.mikesaelim.arxivoaiharvester.model.ArxivGetRecordRequest;
-import io.github.mikesaelim.arxivoaiharvester.model.ArxivListRecordsRequest;
+import io.github.mikesaelim.arxivoaiharvester.model.GetRecordRequest;
+import io.github.mikesaelim.arxivoaiharvester.model.ListRecordsRequest;
 import io.github.mikesaelim.arxivoaiharvester.model.ArxivRequest;
 import io.github.mikesaelim.arxivoaiharvester.model.ArxivResponse;
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
@@ -114,20 +114,20 @@ public class CommandLineInterface {
     /**
      * This handles the creation of an ArxivRequest for the "GetRecord" verb.
      */
-    private static ArxivGetRecordRequest getGetRecordRequest(Scanner scanner) throws URISyntaxException {
+    private static GetRecordRequest getGetRecordRequest(Scanner scanner) throws URISyntaxException {
         System.out.println("Sweet, let's do a GetRecord query.");
         System.out.println();
         System.out.println("What is the identifier for the record you wish to get?");
 
         String identifier = scanner.nextLine().trim();
 
-        return new ArxivGetRecordRequest(identifier);
+        return new GetRecordRequest(identifier);
     }
 
     /**
      * This handles the creation of an ArxivRequest for the "ListRecords" verb.
      */
-    private static ArxivListRecordsRequest getListRecordsRequest(Scanner scanner) throws URISyntaxException {
+    private static ListRecordsRequest getListRecordsRequest(Scanner scanner) throws URISyntaxException {
         System.out.println("Sweet, let's do a ListRecords query.");
         System.out.println();
         System.out.println("From date?  (in yyyy-mm-dd format; leave it blank for none)");
@@ -137,7 +137,7 @@ public class CommandLineInterface {
         System.out.println("Set restriction?  (leave it blank for none)");
         String setSpec = scanner.nextLine().trim();
 
-        return new ArxivListRecordsRequest(
+        return new ListRecordsRequest(
                 fromDate.isEmpty() ? null : LocalDate.parse(fromDate),
                 untilDate.isEmpty() ? null : LocalDate.parse(untilDate),
                 setSpec.isEmpty() ? null : setSpec);
