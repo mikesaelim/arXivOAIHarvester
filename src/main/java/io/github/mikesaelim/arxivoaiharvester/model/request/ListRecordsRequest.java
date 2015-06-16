@@ -1,4 +1,4 @@
-package io.github.mikesaelim.arxivoaiharvester.model;
+package io.github.mikesaelim.arxivoaiharvester.model.request;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

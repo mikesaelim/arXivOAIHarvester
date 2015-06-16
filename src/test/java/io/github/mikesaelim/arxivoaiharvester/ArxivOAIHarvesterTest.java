@@ -1,7 +1,7 @@
 package io.github.mikesaelim.arxivoaiharvester;
 
 import io.github.mikesaelim.arxivoaiharvester.exception.ArxivError;
-import io.github.mikesaelim.arxivoaiharvester.model.ArxivRequest;
+import io.github.mikesaelim.arxivoaiharvester.model.request.ArxivRequest;
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleVersion;
 import io.github.mikesaelim.arxivoaiharvester.xml.ParsedXmlResponse;
