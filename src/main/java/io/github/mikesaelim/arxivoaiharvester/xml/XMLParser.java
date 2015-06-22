@@ -2,11 +2,13 @@ package io.github.mikesaelim.arxivoaiharvester.xml;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import io.github.mikesaelim.arxivoaiharvester.exception.*;
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleVersion;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.arxiv.oai.arxivraw.ArXivRawType;
 import org.openarchives.oai._2.*;
 import org.xml.sax.SAXException;
 
@@ -20,7 +22,10 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.io.InputStream;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -60,8 +65,7 @@ public class XMLParser {
             unmarshaller = JAXBContext.newInstance("org.openarchives.oai._2:org.arxiv.oai.arxivraw")
                     .createUnmarshaller();
         } catch (JAXBException e) {
-            log.error("Error creating JAXB unmarshaller", e);
-            throw new HarvesterError(e);
+            throw new HarvesterError("Error creating JAXB unmarshaller", e);
         }
 
         List<Source> schemaSources = Lists.newArrayList(
@@ -72,8 +76,7 @@ public class XMLParser {
                     .newSchema(schemaSources.toArray(new Source[schemaSources.size()]));
             unmarshaller.setSchema(schema);
         } catch (SAXException e) {
-            log.error("Error creating validation schema", e);
-            throw new HarvesterError(e);
+            throw new HarvesterError("Error creating validation schema", e);
         }
     }
 
@@ -92,15 +95,13 @@ public class XMLParser {
         try {
             unmarshalledResponse = (OAIPMHtype) unmarshaller.unmarshal(xmlResponse);
         } catch (Exception e) {
-            log.error("Error unmarshalling XML response from repository", e);
-            throw new ParseException(e);
+            throw new ParseException("Error unmarshalling XML response from repository", e);
         }
 
-        ParsedXmlResponse.ParsedXmlResponseBuilder responseBuilder = ParsedXmlResponse.builder()
-                .responseDate(toZonedDateTime(unmarshalledResponse.getResponseDate()));
+        ZonedDateTime responseDate = parseResponseDate(unmarshalledResponse.getResponseDate());
 
 
-        // Parse any errors
+        // Parse any errors returned by the repository
         List<OAIPMHerrorType> errors = Lists.newArrayList(unmarshalledResponse.getError());
         if (!errors.isEmpty()) {
             errors.sort(repositoryErrorSeverityComparator);
@@ -108,7 +109,9 @@ public class XMLParser {
             // ID_DOES_NOT_EXIST and NO_RECORDS_MATCH are not considered errors, and simply result in an empty result set
             if (errors.get(0).getCode() == OAIPMHerrorcodeType.ID_DOES_NOT_EXIST ||
                     errors.get(0).getCode() == OAIPMHerrorcodeType.NO_RECORDS_MATCH) {
-                return responseBuilder.build();
+                return ParsedXmlResponse.builder()
+                        .responseDate(responseDate)
+                        .build();
             }
 
             // Produce error report
@@ -135,24 +138,32 @@ public class XMLParser {
 
         // Handle the GetRecord response
         if (unmarshalledResponse.getGetRecord() != null) {
-            ArticleMetadata record = parseRecord(unmarshalledResponse.getGetRecord().getRecord());
+            ArticleMetadata record = parseRecord(unmarshalledResponse.getGetRecord().getRecord(), responseDate);
 
-            return responseBuilder.records(Lists.newArrayList(record)).build();
+            return ParsedXmlResponse.builder()
+                    .responseDate(responseDate)
+                    .records(Lists.newArrayList(record))
+                    .build();
         }
 
 
         // Handle the ListRecords response
         if (unmarshalledResponse.getListRecords() != null) {
-            List<ArticleMetadata> records = unmarshalledResponse.getListRecords().getRecord().stream()
-                    .map(this::parseRecord).collect(Collectors.toList());
+            ParsedXmlResponse.ParsedXmlResponseBuilder responseBuilder =  ParsedXmlResponse.builder()
+                    .responseDate(responseDate);
+
+            responseBuilder.records(unmarshalledResponse.getListRecords().getRecord().stream()
+                    .map(xmlRecord -> parseRecord(xmlRecord, responseDate))
+                    .collect(Collectors.toList()));
 
             ResumptionTokenType resumptionToken = unmarshalledResponse.getListRecords().getResumptionToken();
+            if (resumptionToken != null) {
+                responseBuilder.resumptionToken(resumptionToken.getValue())
+                        .cursor(resumptionToken.getCursor())
+                        .completeListSize(resumptionToken.getCompleteListSize());
+            }
 
-            return responseBuilder.records(records)
-                    .resumptionToken(resumptionToken.getValue())
-                    .cursor(resumptionToken.getCursor())
-                    .completeListSize(resumptionToken.getCompleteListSize())
-                    .build();
+            return responseBuilder.build();
         }
 
 
@@ -160,13 +171,115 @@ public class XMLParser {
         throw new RepositoryError("Response from repository was not an error, GetRecord, or ListRecords response");
     }
 
-    @VisibleForTesting ArticleMetadata parseRecord(RecordType xmlRecord) {
-        // TODO
-        return null;
+    /**
+     * Parse a single record of article metadata.
+     * @throws ParseException if there is a parsing error
+     */
+    @VisibleForTesting ArticleMetadata parseRecord(RecordType xmlRecord, ZonedDateTime retrievalDateTime) {
+        ArticleMetadata.ArticleMetadataBuilder articleBuilder = ArticleMetadata.builder();
+        articleBuilder.retrievalDateTime(retrievalDateTime);
+
+        HeaderType header = xmlRecord.getHeader();
+        articleBuilder.identifier(header.getIdentifier())
+                .datestamp(parseDatestamp(header.getDatestamp()))
+                .sets(Sets.newHashSet(header.getSetSpec()))
+                .deleted(header.getStatus() != null && header.getStatus() == StatusType.DELETED);
+
+        ArXivRawType metadata = (ArXivRawType) xmlRecord.getMetadata().getAny();
+        articleBuilder.id(metadata.getId())
+                .submitter(metadata.getSubmitter())
+                .versions(metadata.getVersion().stream()
+                        .map(versionType -> ArticleVersion.builder()
+                                .versionNumber(parseVersionNumber(versionType.getVersion()))
+                                .submissionTime(parseSubmissionTime(versionType.getDate()))
+                                .size(versionType.getSize())
+                                .sourceType(versionType.getSourceType())
+                                .build())
+                        .collect(Collectors.toSet()))
+                .title(metadata.getTitle())
+                .authors(metadata.getAuthors())
+                .categories(parseCategories(metadata.getCategories()))
+                .comments(metadata.getComments())
+                .proxy(metadata.getProxy())
+                .reportNo(metadata.getReportNo())
+                .acmClass(metadata.getAcmClass())
+                .mscClass(metadata.getMscClass())
+                .journalRef(metadata.getJournalRef())
+                .doi(metadata.getDoi())
+                .license(metadata.getLicense())
+                .articleAbstract(metadata.getAbstract());
+
+        // TODO handle line breaks in strings with StringUtils.normalizeSpace() if testing deems it necessary
+        return articleBuilder.build();
     }
 
-
-    @VisibleForTesting ZonedDateTime toZonedDateTime(XMLGregorianCalendar xmlGregorianCalendar) {
+    /**
+     * Parse the response date.
+     */
+    @VisibleForTesting ZonedDateTime parseResponseDate(XMLGregorianCalendar xmlGregorianCalendar) {
         return xmlGregorianCalendar.toGregorianCalendar().toZonedDateTime();
     }
+
+    /**
+     * Parse the datestamp of a record.
+     * @throws ParseException if there is a parsing error
+     */
+    @VisibleForTesting LocalDate parseDatestamp(String value) {
+        LocalDate datestamp;
+
+        try {
+            datestamp = LocalDate.parse(value);
+        } catch(DateTimeParseException e) {
+            throw new ParseException("Could not parse datestamp '" + value + "' in ISO_LOCAL_DATE format");
+        }
+
+        return datestamp;
+    }
+
+    /**
+     * Parse the version number from the version string.  Per the arXivRaw XML schema, this should be in the form "v1",
+     * "v2", etc.
+     * @throws ParseException if the label cannot be found or does not fit the specified format
+     */
+    @VisibleForTesting Integer parseVersionNumber(String versionString) {
+        String errorString = "Could not parse version '" + versionString + "'";
+
+        if (versionString == null || !versionString.startsWith("v")) {
+            throw new ParseException(errorString);
+        }
+
+        Integer version;
+        try {
+            version = Integer.valueOf(versionString.substring(1));
+        } catch (NumberFormatException e) {
+            throw new ParseException(errorString, e);
+        }
+
+        return version;
+    }
+
+    /**
+     * Parse the date of an article version.
+     * @throws ParseException if there is a parsing error
+     */
+    @VisibleForTesting ZonedDateTime parseSubmissionTime(String value) {
+        ZonedDateTime versionDate;
+        try {
+            versionDate = ZonedDateTime.parse(value, DateTimeFormatter.RFC_1123_DATE_TIME);
+        } catch (DateTimeParseException e) {
+            throw new ParseException("Could not parse version date '" + value + "' in RFC_1123_DATE_TIME format", e);
+        }
+
+        return versionDate;
+    }
+
+    /**
+     * Parse the category string of an article.
+     * @return List of separate categories, in the same order as they were in the string
+     */
+    @VisibleForTesting List<String> parseCategories(String value) {
+        return value != null ? Lists.newArrayList(value.split(" ")) : Lists.newArrayList();
+    }
+
+
 }

@@ -5,7 +5,7 @@ import io.github.mikesaelim.arxivoaiharvester.model.request.GetRecordRequest;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.Value;
-import lombok.experimental.Builder;
+import lombok.Builder;
 
 @Value
 @ToString(callSuper = true)

@@ -1,7 +1,7 @@
 package io.github.mikesaelim.arxivoaiharvester.model.data;
 
 import lombok.Value;
-import lombok.experimental.Builder;
+import lombok.Builder;
 
 import java.time.ZonedDateTime;
 

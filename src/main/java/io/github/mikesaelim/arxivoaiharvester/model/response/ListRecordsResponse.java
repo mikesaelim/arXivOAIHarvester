@@ -8,7 +8,7 @@ import io.github.mikesaelim.arxivoaiharvester.model.request.ResumeListRecordsReq
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.Value;
-import lombok.experimental.Builder;
+import lombok.Builder;
 
 import java.net.URISyntaxException;
 
