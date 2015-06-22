@@ -1,34 +1,28 @@
 package io.github.mikesaelim.arxivoaiharvester.xml;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import io.github.mikesaelim.arxivoaiharvester.exception.*;
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleVersion;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.openarchives.oai._2.OAIPMHerrorType;
-import org.openarchives.oai._2.OAIPMHerrorcodeType;
-import org.openarchives.oai._2.OAIPMHtype;
+import org.openarchives.oai._2.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.UnmarshalException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
-import java.io.File;
 import java.io.InputStream;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Parses the XML response from arXiv's OAI repository into a {@link ParsedXmlResponse}.  The XML response must
@@ -47,14 +41,9 @@ import java.util.Map;
  * </ol>
  * Additionally, we have to deal with corrupted XML input that contains spurious line breaks in the middle of some of
  * the string values.  For this reason, we normalize the string values that we extract.
- *
- * TODO sample usage
  */
 @Slf4j
 public class XMLParser {
-
-    // TODO: handle warnings, errors, etc. from the parser
-    // TODO: handle error responses from the repository
 
     private Unmarshaller unmarshaller;
 
@@ -93,6 +82,9 @@ public class XMLParser {
      *
      * @throws NullPointerException if xmlResponse is null
      * @throws ParseException if parsing fails
+     * @throws BadArgumentException if the repository's response contains a BadArgument error
+     * @throws BadResumptionTokenException if the repository's response contains a BadResumptionToken error
+     * @throws RepositoryError if the repository's response was parseable but invalid
      */
     public ParsedXmlResponse parse(@NonNull InputStream xmlResponse) {
 
@@ -121,8 +113,8 @@ public class XMLParser {
 
             // Produce error report
             StringBuilder errorStringBuilder = new StringBuilder("Received error from repository: \n");
-            errors.stream().forEach(error ->
-                    errorStringBuilder.append(error.getCode().value()).append(" : ").append(error.getValue()).append("\n"));
+            errors.stream().forEach(error -> errorStringBuilder.append(error.getCode().value()).append(" : ")
+                                                                .append(error.getValue()).append("\n"));
             String errorString = errorStringBuilder.toString();
 
             // Throw an exception corresponding to the most severe error
@@ -141,10 +133,35 @@ public class XMLParser {
         }
 
 
+        // Handle the GetRecord response
+        if (unmarshalledResponse.getGetRecord() != null) {
+            ArticleMetadata record = parseRecord(unmarshalledResponse.getGetRecord().getRecord());
+
+            return responseBuilder.records(Lists.newArrayList(record)).build();
+        }
 
 
+        // Handle the ListRecords response
+        if (unmarshalledResponse.getListRecords() != null) {
+            List<ArticleMetadata> records = unmarshalledResponse.getListRecords().getRecord().stream()
+                    .map(this::parseRecord).collect(Collectors.toList());
+
+            ResumptionTokenType resumptionToken = unmarshalledResponse.getListRecords().getResumptionToken();
+
+            return responseBuilder.records(records)
+                    .resumptionToken(resumptionToken.getValue())
+                    .cursor(resumptionToken.getCursor())
+                    .completeListSize(resumptionToken.getCompleteListSize())
+                    .build();
+        }
 
 
+        // Handling of other response types is undefined
+        throw new RepositoryError("Response from repository was not an error, GetRecord, or ListRecords response");
+    }
+
+    @VisibleForTesting ArticleMetadata parseRecord(RecordType xmlRecord) {
+        // TODO
         return null;
     }
 

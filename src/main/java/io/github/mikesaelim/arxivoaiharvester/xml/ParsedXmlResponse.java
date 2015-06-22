@@ -5,6 +5,7 @@ import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
 import lombok.Builder;
 import lombok.Value;
 
+import java.math.BigInteger;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -26,7 +27,7 @@ public class ParsedXmlResponse {
      * Resumption token information.
      */
     private String resumptionToken;
-    private Integer cursor;
-    private Integer completeListSize;
+    private BigInteger cursor;
+    private BigInteger completeListSize;
 
 }
