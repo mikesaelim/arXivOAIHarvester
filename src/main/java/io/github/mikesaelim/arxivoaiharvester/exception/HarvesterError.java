@@ -4,21 +4,21 @@ package io.github.mikesaelim.arxivoaiharvester.exception;
  * Error thrown when the harvester receives an abnormal response from the repository, or encounters some kind of
  * unrecoverable fault.
  */
-public class InternalError extends Error {
+public class HarvesterError extends Error {
 
-    public InternalError() {
+    public HarvesterError() {
         super();
     }
 
-    public InternalError(String message) {
+    public HarvesterError(String message) {
         super(message);
     }
 
-    public InternalError(Throwable cause) {
+    public HarvesterError(Throwable cause) {
         super(cause);
     }
 
-    public InternalError(String message, Throwable cause) {
+    public HarvesterError(String message, Throwable cause) {
         super(message, cause);
     }
 
