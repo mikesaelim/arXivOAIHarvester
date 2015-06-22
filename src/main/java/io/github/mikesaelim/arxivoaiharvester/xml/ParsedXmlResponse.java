@@ -1,5 +1,6 @@
 package io.github.mikesaelim.arxivoaiharvester.xml;
 
+import com.google.common.collect.Lists;
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
 import lombok.Builder;
 import lombok.Value;
@@ -19,7 +20,7 @@ public class ParsedXmlResponse {
     /**
      * List of records returned by the repository.  It may be empty.
      */
-    private List<ArticleMetadata> records;
+    private List<ArticleMetadata> records = Lists.newLinkedList();
 
     /**
      * Resumption token information.

@@ -1,8 +1,7 @@
 package io.github.mikesaelim.arxivoaiharvester.exception;
 
 /**
- * Error thrown when the harvester receives an abnormal response from the repository, or encounters some kind of
- * unrecoverable fault.
+ * Error thrown when the harvester encounters some kind of unrecoverable internal fault.
  */
 public class HarvesterError extends Error {
 

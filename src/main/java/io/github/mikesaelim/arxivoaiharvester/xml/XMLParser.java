@@ -1,13 +1,16 @@
 package io.github.mikesaelim.arxivoaiharvester.xml;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import io.github.mikesaelim.arxivoaiharvester.exception.HarvesterError;
-import io.github.mikesaelim.arxivoaiharvester.exception.ParseException;
+import com.google.common.collect.Maps;
+import io.github.mikesaelim.arxivoaiharvester.exception.*;
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleVersion;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.openarchives.oai._2.OAIPMHerrorType;
+import org.openarchives.oai._2.OAIPMHerrorcodeType;
 import org.openarchives.oai._2.OAIPMHtype;
 import org.xml.sax.SAXException;
 
@@ -25,6 +28,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Parses the XML response from arXiv's OAI repository into a {@link ParsedXmlResponse}.  The XML response must
@@ -52,7 +56,10 @@ public class XMLParser {
     // TODO: handle warnings, errors, etc. from the parser
     // TODO: handle error responses from the repository
 
-    Unmarshaller unmarshaller;
+    private Unmarshaller unmarshaller;
+
+    private static final RepositoryErrorSeverityComparator repositoryErrorSeverityComparator =
+            new RepositoryErrorSeverityComparator();
 
     /**
      * Constructs a new XML parser by initializing the JAXB unmarshaller and setting up the XML validation.
@@ -97,9 +104,44 @@ public class XMLParser {
             throw new ParseException(e);
         }
 
-        ParsedXmlResponse.ParsedXmlResponseBuilder responseBuilder = ParsedXmlResponse.builder();
+        ParsedXmlResponse.ParsedXmlResponseBuilder responseBuilder = ParsedXmlResponse.builder()
+                .responseDate(toZonedDateTime(unmarshalledResponse.getResponseDate()));
 
-        responseBuilder.responseDate(toZonedDateTime(unmarshalledResponse.getResponseDate()));
+
+        // Parse any errors
+        List<OAIPMHerrorType> errors = Lists.newArrayList(unmarshalledResponse.getError());
+        if (!errors.isEmpty()) {
+            errors.sort(repositoryErrorSeverityComparator);
+
+            // ID_DOES_NOT_EXIST and NO_RECORDS_MATCH are not considered errors, and simply result in an empty result set
+            if (errors.get(0).getCode() == OAIPMHerrorcodeType.ID_DOES_NOT_EXIST ||
+                    errors.get(0).getCode() == OAIPMHerrorcodeType.NO_RECORDS_MATCH) {
+                return responseBuilder.build();
+            }
+
+            // Produce error report
+            StringBuilder errorStringBuilder = new StringBuilder("Received error from repository: \n");
+            errors.stream().forEach(error ->
+                    errorStringBuilder.append(error.getCode().value()).append(" : ").append(error.getValue()).append("\n"));
+            String errorString = errorStringBuilder.toString();
+
+            // Throw an exception corresponding to the most severe error
+            switch (errors.get(0).getCode()) {
+                case BAD_ARGUMENT:
+                    throw new BadArgumentException(errorString);
+                case BAD_RESUMPTION_TOKEN:
+                    throw new BadResumptionTokenException(errorString);
+                case BAD_VERB:
+                case CANNOT_DISSEMINATE_FORMAT:
+                case NO_METADATA_FORMATS:
+                case NO_SET_HIERARCHY:
+                default:
+                    throw new RepositoryError(errorString);
+            }
+        }
+
+
+
 
 
 
