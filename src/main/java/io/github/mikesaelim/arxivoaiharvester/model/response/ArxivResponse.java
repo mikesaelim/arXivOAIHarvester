@@ -1,18 +1,22 @@
 package io.github.mikesaelim.arxivoaiharvester.model.response;
 
-import lombok.Data;
+import io.github.mikesaelim.arxivoaiharvester.model.request.ArxivRequest;
 
 import java.time.ZonedDateTime;
 
 /**
- * Subclasses of this class represent a response from the arXiv OAI repository.
+ * Implementations of this interface represent a response from the arXiv OAI repository.
  */
-@Data
-public abstract class ArxivResponse {
+public interface ArxivResponse {
 
     /**
-     * Response datetime.
+     * Get the response datetime
      */
-    private final ZonedDateTime responseDate;
+    ZonedDateTime getResponseDate();
+
+    /**
+     * Get the original request to the harvester
+     */
+    ArxivRequest getRequest();
 
 }

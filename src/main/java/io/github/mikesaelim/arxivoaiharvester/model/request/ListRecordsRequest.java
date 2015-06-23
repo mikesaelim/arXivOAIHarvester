@@ -72,7 +72,7 @@ public class ListRecordsRequest extends ArxivRequest {
             uriBuilder.setParameter("until", untilDate.toString());
         }
         if (setSpec != null) {
-            uriBuilder.setParameter("setSpec", setSpec);
+            uriBuilder.setParameter("set", setSpec);
         }
 
         return uriBuilder.build();

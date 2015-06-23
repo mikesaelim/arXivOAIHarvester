@@ -8,12 +8,14 @@ import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleVersion;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.arxiv.oai.arxivraw.ArXivRawType;
 import org.openarchives.oai._2.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -23,11 +25,14 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.io.InputStream;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.StringUtils.normalizeSpace;
 
 /**
  * Parses the XML response from arXiv's OAI repository into a {@link ParsedXmlResponse}.  The XML response must
@@ -68,9 +73,10 @@ public class XMLParser {
             throw new HarvesterError("Error creating JAXB unmarshaller", e);
         }
 
+        ClassLoader classLoader = this.getClass().getClassLoader();
         List<Source> schemaSources = Lists.newArrayList(
-                new StreamSource(this.getClass().getResourceAsStream("OAI-PMH.xsd")),
-                new StreamSource(this.getClass().getResourceAsStream("arXivRaw.xsd")));
+                new StreamSource(classLoader.getResourceAsStream("OAI-PMH.xsd")),
+                new StreamSource(classLoader.getResourceAsStream("arXivRaw.xsd")));
         try {
             Schema schema = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
                     .newSchema(schemaSources.toArray(new Source[schemaSources.size()]));
@@ -93,7 +99,10 @@ public class XMLParser {
 
         OAIPMHtype unmarshalledResponse;
         try {
-            unmarshalledResponse = (OAIPMHtype) unmarshaller.unmarshal(xmlResponse);
+            @SuppressWarnings("unchecked")
+            JAXBElement<OAIPMHtype> jaxbElement = (JAXBElement<OAIPMHtype>) unmarshaller.unmarshal(xmlResponse);
+
+            unmarshalledResponse = jaxbElement.getValue();
         } catch (Exception e) {
             throw new ParseException("Error unmarshalling XML response from repository", e);
         }
@@ -111,13 +120,14 @@ public class XMLParser {
                     errors.get(0).getCode() == OAIPMHerrorcodeType.NO_RECORDS_MATCH) {
                 return ParsedXmlResponse.builder()
                         .responseDate(responseDate)
+                        .records(Lists.newArrayList())
                         .build();
             }
 
             // Produce error report
             StringBuilder errorStringBuilder = new StringBuilder("Received error from repository: \n");
             errors.stream().forEach(error -> errorStringBuilder.append(error.getCode().value()).append(" : ")
-                                                                .append(error.getValue()).append("\n"));
+                                                                .append(normalizeSpace(error.getValue())).append("\n"));
             String errorString = errorStringBuilder.toString();
 
             // Throw an exception corresponding to the most severe error
@@ -150,15 +160,14 @@ public class XMLParser {
         // Handle the ListRecords response
         if (unmarshalledResponse.getListRecords() != null) {
             ParsedXmlResponse.ParsedXmlResponseBuilder responseBuilder =  ParsedXmlResponse.builder()
-                    .responseDate(responseDate);
-
-            responseBuilder.records(unmarshalledResponse.getListRecords().getRecord().stream()
-                    .map(xmlRecord -> parseRecord(xmlRecord, responseDate))
-                    .collect(Collectors.toList()));
+                    .responseDate(responseDate)
+                    .records(unmarshalledResponse.getListRecords().getRecord().stream()
+                            .map(xmlRecord -> parseRecord(xmlRecord, responseDate))
+                            .collect(Collectors.toList()));
 
             ResumptionTokenType resumptionToken = unmarshalledResponse.getListRecords().getResumptionToken();
             if (resumptionToken != null) {
-                responseBuilder.resumptionToken(resumptionToken.getValue())
+                responseBuilder.resumptionToken(normalizeSpace(resumptionToken.getValue()))
                         .cursor(resumptionToken.getCursor())
                         .completeListSize(resumptionToken.getCompleteListSize());
             }
@@ -180,44 +189,47 @@ public class XMLParser {
         articleBuilder.retrievalDateTime(retrievalDateTime);
 
         HeaderType header = xmlRecord.getHeader();
-        articleBuilder.identifier(header.getIdentifier())
-                .datestamp(parseDatestamp(header.getDatestamp()))
-                .sets(Sets.newHashSet(header.getSetSpec()))
+        articleBuilder.identifier(normalizeSpace(header.getIdentifier()))
+                .datestamp(parseDatestamp(normalizeSpace(header.getDatestamp())))
+                .sets(header.getSetSpec().stream().map(StringUtils::normalizeSpace).collect(Collectors.toSet()))
                 .deleted(header.getStatus() != null && header.getStatus() == StatusType.DELETED);
 
-        ArXivRawType metadata = (ArXivRawType) xmlRecord.getMetadata().getAny();
-        articleBuilder.id(metadata.getId())
-                .submitter(metadata.getSubmitter())
+        @SuppressWarnings("unchecked")
+        JAXBElement<ArXivRawType> jaxbElement = (JAXBElement<ArXivRawType>) xmlRecord.getMetadata().getAny();
+
+        ArXivRawType metadata = jaxbElement.getValue();
+        articleBuilder.id(normalizeSpace(metadata.getId()))
+                .submitter(normalizeSpace(metadata.getSubmitter()))
                 .versions(metadata.getVersion().stream()
                         .map(versionType -> ArticleVersion.builder()
-                                .versionNumber(parseVersionNumber(versionType.getVersion()))
-                                .submissionTime(parseSubmissionTime(versionType.getDate()))
-                                .size(versionType.getSize())
-                                .sourceType(versionType.getSourceType())
+                                .versionNumber(parseVersionNumber(normalizeSpace(versionType.getVersion())))
+                                .submissionTime(parseSubmissionTime(normalizeSpace(versionType.getDate())))
+                                .size(normalizeSpace(versionType.getSize()))
+                                .sourceType(normalizeSpace(versionType.getSourceType()))
                                 .build())
                         .collect(Collectors.toSet()))
-                .title(metadata.getTitle())
-                .authors(metadata.getAuthors())
-                .categories(parseCategories(metadata.getCategories()))
-                .comments(metadata.getComments())
-                .proxy(metadata.getProxy())
-                .reportNo(metadata.getReportNo())
-                .acmClass(metadata.getAcmClass())
-                .mscClass(metadata.getMscClass())
-                .journalRef(metadata.getJournalRef())
-                .doi(metadata.getDoi())
-                .license(metadata.getLicense())
-                .articleAbstract(metadata.getAbstract());
+                .title(normalizeSpace(metadata.getTitle()))
+                .authors(normalizeSpace(metadata.getAuthors()))
+                .categories(parseCategories(normalizeSpace(metadata.getCategories())))
+                .comments(normalizeSpace(metadata.getComments()))
+                .proxy(normalizeSpace(metadata.getProxy()))
+                .reportNo(normalizeSpace(metadata.getReportNo()))
+                .acmClass(normalizeSpace(metadata.getAcmClass()))
+                .mscClass(normalizeSpace(metadata.getMscClass()))
+                .journalRef(normalizeSpace(metadata.getJournalRef()))
+                .doi(normalizeSpace(metadata.getDoi()))
+                .license(normalizeSpace(metadata.getLicense()))
+                .articleAbstract(normalizeSpace(metadata.getAbstract()));
 
         // TODO handle line breaks in strings with StringUtils.normalizeSpace() if testing deems it necessary
         return articleBuilder.build();
     }
 
     /**
-     * Parse the response date.
+     * Parse the response date.  The result will be in UTC.
      */
     @VisibleForTesting ZonedDateTime parseResponseDate(XMLGregorianCalendar xmlGregorianCalendar) {
-        return xmlGregorianCalendar.toGregorianCalendar().toZonedDateTime();
+        return xmlGregorianCalendar.toGregorianCalendar().toZonedDateTime().withZoneSameInstant(ZoneOffset.UTC);
     }
 
     /**
@@ -263,14 +275,14 @@ public class XMLParser {
      * @throws ParseException if there is a parsing error
      */
     @VisibleForTesting ZonedDateTime parseSubmissionTime(String value) {
-        ZonedDateTime versionDate;
+        ZonedDateTime submissionTime;
         try {
-            versionDate = ZonedDateTime.parse(value, DateTimeFormatter.RFC_1123_DATE_TIME);
+            submissionTime = ZonedDateTime.parse(value, DateTimeFormatter.RFC_1123_DATE_TIME);
         } catch (DateTimeParseException e) {
             throw new ParseException("Could not parse version date '" + value + "' in RFC_1123_DATE_TIME format", e);
         }
 
-        return versionDate;
+        return submissionTime;
     }
 
     /**

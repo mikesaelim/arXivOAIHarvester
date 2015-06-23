@@ -11,12 +11,16 @@ import lombok.Value;
 import lombok.Builder;
 
 import java.net.URISyntaxException;
+import java.time.ZonedDateTime;
 
 @Value
-@ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
 @Builder
-public class ListRecordsResponse extends ArxivResponse {
+public class ListRecordsResponse implements ArxivResponse {
+
+    /**
+     * Response datetime.
+     */
+    private final ZonedDateTime responseDate;
 
     /**
      * The original request sent to the arXiv OAI repository.

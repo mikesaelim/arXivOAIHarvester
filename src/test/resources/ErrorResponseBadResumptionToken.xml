@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+<responseDate>2015-06-23T13:31:17Z</responseDate>
+<request verb="ListRecords" resumptionToken="3">http://export.arxiv.org/oai2</request>
+<error code="badResumptionToken">The resumptionToken supplied is illegal for this repository</error>
+</OAI-PMH>

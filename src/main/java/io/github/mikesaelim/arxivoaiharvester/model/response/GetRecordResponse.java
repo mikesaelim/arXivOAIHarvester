@@ -7,11 +7,16 @@ import lombok.ToString;
 import lombok.Value;
 import lombok.Builder;
 
+import java.time.ZonedDateTime;
+
 @Value
-@ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
 @Builder
-public class GetRecordResponse extends ArxivResponse {
+public class GetRecordResponse implements ArxivResponse {
+
+    /**
+     * Response datetime.
+     */
+    private ZonedDateTime responseDate;
 
     /**
      * The original request sent to the arXiv OAI repository.

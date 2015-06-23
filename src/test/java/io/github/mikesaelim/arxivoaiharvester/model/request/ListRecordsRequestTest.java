@@ -16,7 +16,7 @@ public class ListRecordsRequestTest {
 
         ListRecordsRequest request = new ListRecordsRequest(fromDate, untilDate, setSpec);
 
-        assertEquals("http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=arXivRaw&from=2014-11-25&until=2015-01-05&setSpec=physics",
+        assertEquals("http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=arXivRaw&from=2014-11-25&until=2015-01-05&set=physics",
                 request.getUri().toString());
     }
 
@@ -27,7 +27,7 @@ public class ListRecordsRequestTest {
 
         ListRecordsRequest request = new ListRecordsRequest(fromDate, null, setSpec);
 
-        assertEquals("http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=arXivRaw&from=2014-11-25&setSpec=physics",
+        assertEquals("http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=arXivRaw&from=2014-11-25&set=physics",
                 request.getUri().toString());
     }
 
