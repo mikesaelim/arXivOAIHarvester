@@ -10,6 +10,7 @@ import lombok.ToString;
 import lombok.Value;
 import lombok.Builder;
 
+import java.math.BigInteger;
 import java.net.URISyntaxException;
 import java.time.ZonedDateTime;
 
@@ -20,7 +21,7 @@ public class ListRecordsResponse implements ArxivResponse {
     /**
      * Response datetime.
      */
-    private final ZonedDateTime responseDate;
+    private ZonedDateTime responseDate;
 
     /**
      * The original request sent to the arXiv OAI repository.
@@ -42,12 +43,12 @@ public class ListRecordsResponse implements ArxivResponse {
      * Position information, if there are more pages left in the response.  If there are no more pages left, this will
      * be null.
      */
-    private Integer cursor;
-    private Integer completeListSize;
+    private BigInteger cursor;
+    private BigInteger completeListSize;
 
     public ResumeListRecordsRequest resumption() {
         try {
-            return new ResumeListRecordsRequest(resumptionToken);
+            return new ResumeListRecordsRequest(resumptionToken, request);
         } catch (URISyntaxException e) {
             throw new BadResumptionTokenException(e);
         }

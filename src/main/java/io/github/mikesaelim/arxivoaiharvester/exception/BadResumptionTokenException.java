@@ -4,7 +4,7 @@ package io.github.mikesaelim.arxivoaiharvester.exception;
  * Unchecked exception thrown when the harvester receives a response from the repository with the "badResumptionToken"
  * error condition.
  */
-public class BadResumptionTokenException extends RuntimeException {
+public class BadResumptionTokenException extends ArxivException {
 
     public BadResumptionTokenException() {
         super();

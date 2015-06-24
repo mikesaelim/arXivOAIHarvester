@@ -5,7 +5,7 @@ package io.github.mikesaelim.arxivoaiharvester.exception;
  * exceeded the allowable wait time.
  * TODO determine whether this should be checked or unchecked
  */
-public class TimeoutException extends RuntimeException {
+public class TimeoutException extends ArxivException {
 
     public TimeoutException() {
         super();

@@ -3,7 +3,7 @@ package io.github.mikesaelim.arxivoaiharvester.exception;
 /**
  * Error thrown when the harvester encounters an invalid response from the repository.
  */
-public class RepositoryError extends Error {
+public class RepositoryError extends ArxivError {
 
     public RepositoryError() {
         super();

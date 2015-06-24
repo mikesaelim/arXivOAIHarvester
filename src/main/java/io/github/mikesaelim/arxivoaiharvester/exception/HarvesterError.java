@@ -3,7 +3,7 @@ package io.github.mikesaelim.arxivoaiharvester.exception;
 /**
  * Error thrown when the harvester encounters some kind of unrecoverable internal fault.
  */
-public class HarvesterError extends Error {
+public class HarvesterError extends ArxivError {
 
     public HarvesterError() {
         super();

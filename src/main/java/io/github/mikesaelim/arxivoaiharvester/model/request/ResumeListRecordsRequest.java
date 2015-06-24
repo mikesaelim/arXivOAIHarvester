@@ -25,6 +25,11 @@ public final class ResumeListRecordsRequest extends ArxivRequest {
     private final String resumptionToken;
 
     /**
+     * The original request sent to the arXiv OAI repository.
+     */
+    private final ListRecordsRequest originalRequest;
+
+    /**
      * The URI for the request to the repository, created from these settings.
      */
     private final URI uri;
@@ -34,10 +39,12 @@ public final class ResumeListRecordsRequest extends ArxivRequest {
      * @throws NullPointerException if resumptionToken is null
      * @throws URISyntaxException if the input did not create a valid URI
      */
-    public ResumeListRecordsRequest(@NonNull String resumptionToken) throws URISyntaxException {
+    public ResumeListRecordsRequest(@NonNull String resumptionToken, @NonNull ListRecordsRequest originalRequest)
+            throws URISyntaxException {
         super(Verb.LIST_RECORDS);
 
         this.resumptionToken = resumptionToken;
+        this.originalRequest = originalRequest;
 
         uri = constructURI();
     }
