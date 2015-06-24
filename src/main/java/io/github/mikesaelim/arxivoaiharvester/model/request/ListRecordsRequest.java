@@ -19,7 +19,7 @@ import java.time.LocalDate;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class ListRecordsRequest extends ArxivRequest {
+public final class ListRecordsRequest extends ArxivRequest {
 
     /**
      * Optional lower bound of the datestamp range.  If null, the range is unbounded from below.

@@ -52,7 +52,6 @@ import static org.apache.commons.lang3.StringUtils.normalizeSpace;
  * Additionally, we have to deal with corrupted XML input that contains spurious line breaks in the middle of some of
  * the string values.  For this reason, we normalize the string values that we extract.
  */
-@Slf4j
 public class XMLParser {
 
     private Unmarshaller unmarshaller;

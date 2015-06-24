@@ -17,7 +17,7 @@ import java.net.URISyntaxException;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class ResumeListRecordsRequest extends ArxivRequest {
+public final class ResumeListRecordsRequest extends ArxivRequest {
 
     /**
      * Resumption token returned by the last ListRecords response.
