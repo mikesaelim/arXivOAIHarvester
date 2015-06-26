@@ -9,10 +9,10 @@ import io.github.mikesaelim.arxivoaiharvester.model.response.GetRecordResponse;
 import io.github.mikesaelim.arxivoaiharvester.model.response.ListRecordsResponse;
 import io.github.mikesaelim.arxivoaiharvester.xml.ParsedXmlResponse;
 import io.github.mikesaelim.arxivoaiharvester.xml.XMLParser;
-import lombok.Data;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -77,9 +77,9 @@ public class ArxivOAIHarvester {
     }
 
     /**
-     * See {@link #harvest(URI)} for exceptions.
+     * See {@link #harvest(URI)} for exceptions.  Not thread-safe.
      */
-    public GetRecordResponse harvest(@NonNull GetRecordRequest request) {
+    public GetRecordResponse harvest(@NonNull GetRecordRequest request) throws InterruptedException {
         ParsedXmlResponse xmlResponse = harvest(request.getUri());
 
         return GetRecordResponse.builder()
@@ -90,9 +90,9 @@ public class ArxivOAIHarvester {
     }
 
     /**
-     * See {@link #harvest(URI)} for exceptions.
+     * See {@link #harvest(URI)} for exceptions.  Not thread-safe.
      */
-    public ListRecordsResponse harvest(@NonNull ListRecordsRequest request) {
+    public ListRecordsResponse harvest(@NonNull ListRecordsRequest request) throws InterruptedException {
         ParsedXmlResponse xmlResponse = harvest(request.getUri());
 
         return ListRecordsResponse.builder()
@@ -106,9 +106,9 @@ public class ArxivOAIHarvester {
     }
 
     /**
-     * See {@link #harvest(URI)} for exceptions.
+     * See {@link #harvest(URI)} for exceptions.  Not thread-safe.
      */
-    public ListRecordsResponse harvest(@NonNull ResumeListRecordsRequest request) {
+    public ListRecordsResponse harvest(@NonNull ResumeListRecordsRequest request) throws InterruptedException {
         ParsedXmlResponse xmlResponse = harvest(request.getUri());
 
         return ListRecordsResponse.builder()
@@ -122,20 +122,22 @@ public class ArxivOAIHarvester {
     }
 
     /**
+     * Send the harvesting request and retrieve a response.  This method will try multiple times, waiting the appropriate
+     * amount of time before retrying.  It is definitely not thread-safe.
+     *
      * @param requestUri URI to be sent to the repository
      * @return parsed content of the response from the repository
      *
      * @throws NullPointerException if requestUri is null
      * @throws HttpException if there is a problem communicating with the repository
+     * @throws InterruptedException if the process is interrupted
      * @throws TimeoutException if there have been too many retries, or the repository has suggested a wait time that is too long
      * @throws ParseException if parsing fails
      * @throws RepositoryError if the repository's response was parseable but invalid
      * @throws BadArgumentException if the repository's response contains a BadArgument error
      * @throws BadResumptionTokenException if the repository's response contains a BadResumptionToken error
      */
-    private ParsedXmlResponse harvest(@NonNull URI requestUri) {
-        // TODO control flow and 503
-
+    private ParsedXmlResponse harvest(@NonNull URI requestUri) throws InterruptedException {
         HttpGet httpRequest = new HttpGet(requestUri);
         httpRequest.addHeader("User-Agent", userAgentHeader);
         httpRequest.addHeader("From", fromHeader);
@@ -145,21 +147,23 @@ public class ArxivOAIHarvester {
             RepositoryResponse response = tryHarvest(httpRequest);
             if (response.getParsedXmlResponse() != null) {
                 return response.getParsedXmlResponse();
-            } else {
-                Duration wait = response.getWait();
-
-                if (wait.compareTo(maxWaitBetweenRequests) > 0) {
-                    String errorString = "Repository-suggested wait time of " + wait +
-                            "exceeds maximum allowed wait time of " + maxWaitBetweenRequests +
-                            "; aborting request " + requestUri;
-                    log.warn(errorString);
-                    throw new TimeoutException(errorString);
-                } else if (wait.compareTo(minWaitBetweenRequests) < 0) {
-                    wait = minWaitBetweenRequests;
-                }
-
-                // TODO waiting
             }
+
+            Duration wait = response.getWait();
+            if (wait.compareTo(maxWaitBetweenRequests) > 0) {
+                String errorString = "Repository-suggested wait time of " + wait +
+                        "exceeds maximum allowed wait time of " + maxWaitBetweenRequests +
+                        "; aborting request " + requestUri;
+                log.warn(errorString);
+                throw new TimeoutException(errorString);
+            } else if (wait.compareTo(minWaitBetweenRequests) < 0) {
+                wait = minWaitBetweenRequests;
+            } else {
+                // Padding to help ensure that we don't retry too early and run afoul of the repository's throttling logic
+                wait = wait.plusSeconds(5);
+            }
+
+            Thread.sleep(wait.toMillis());
 
             numRetries++;
         }
@@ -171,7 +175,16 @@ public class ArxivOAIHarvester {
 
 
     /**
-     * Send the harvesting request to the arXiv OAI repository once.
+     * Send the harvesting request to the arXiv OAI repository and receiving a response, once.
+     *
+     * It returns one of three things:
+     * <ul>
+     *     <li>if the response is 200 OK, the parsed XML data,</li>
+     *     <li>if the response is 503 Retry After, the number of seconds that the repository suggests waiting, or</li>
+     *     <li>a runtime exception if there is a problem.</li>
+     * </ul>
+     *
+     * The list of runtime exceptions that can be thrown is basically covered in {@link #harvest(URI)}.
      */
     private RepositoryResponse tryHarvest(HttpGet httpRequest) {
         log.info("Sending request to arXiv OAI repository: {}", httpRequest.getURI());
@@ -187,29 +200,33 @@ public class ArxivOAIHarvester {
                     try {
                         parsedXmlResponse = xmlParser.parse(httpResponse.getEntity().getContent());
                     } catch (BadArgumentException | BadResumptionTokenException e) {
-                        log.error(String.format("Repository complained about input for request %s", httpRequest.getURI()), e);
+                        log.error("Repository complained about input for request " + httpRequest.getURI(), e);
                         throw e;
                     } catch (ParseException | RepositoryError e) {
-                        log.error(String.format("Error parsing response for request %s", httpRequest.getURI()), e);
+                        log.error("Error parsing response for request " + httpRequest.getURI(), e);
                         throw e;
                     }
 
                     log.info("Response parsed for request {}", httpRequest.getURI());
 
                     return new RepositoryResponse(parsedXmlResponse, null);
+
                 case HttpStatus.SC_MOVED_TEMPORARILY:
                     // Handling this is not currently supported
                     String movedErrorString = "Redirect received for request " + httpRequest.getURI();
                     log.error(movedErrorString);
                     throw new UnsupportedRedirectException(movedErrorString);
+
                 case HttpStatus.SC_NOT_FOUND:
                     String notFoundErrorString = "Received 404 for request " + httpRequest.getURI();
                     log.error(notFoundErrorString);
                     throw new RepositoryError(notFoundErrorString);
+
                 case HttpStatus.SC_SERVICE_UNAVAILABLE:
-                    // TODO: Handle 503
-                    log.info(""); // TODO
-                    return new RepositoryResponse(null, Duration.ofSeconds(20)); // TODO
+                    Long secondsToWait = Long.parseLong(httpResponse.getFirstHeader(HttpHeaders.RETRY_AFTER).getValue());
+                    log.info("Received 503 Retry After; told to wait " + secondsToWait + " seconds");
+                    return new RepositoryResponse(null, Duration.ofSeconds(secondsToWait));
+
                 default:
                     // Unfortunately, we currently aren't prepared to handle other HTTP status codes.  The OAI specs
                     // don't really say what to do for most of them.  So we log a warning and return an error response.
@@ -221,7 +238,7 @@ public class ArxivOAIHarvester {
                     throw new RepositoryError(defaultErrorString);
             }
         } catch (IOException | IllegalStateException e) {
-            log.error(String.format("Error retrieving response from arXiv OAI repository for request %s", httpRequest.getURI()), e);
+            log.error("Error retrieving response from arXiv OAI repository for request " + httpRequest.getURI(), e);
             throw new HttpException(e);
         }
 
