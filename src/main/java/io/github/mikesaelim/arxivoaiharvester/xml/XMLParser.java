@@ -89,10 +89,10 @@ public class XMLParser {
      * Parse the XML response from the arXiv OAI repository.
      *
      * @throws NullPointerException if xmlResponse is null
-     * @throws BadArgumentException if the repository's response contains a BadArgument error
-     * @throws BadResumptionTokenException if the repository's response contains a BadResumptionToken error
      * @throws ParseException if parsing fails
      * @throws RepositoryError if the repository's response was parseable but invalid
+     * @throws BadArgumentException if the repository's response contains a BadArgument error
+     * @throws BadResumptionTokenException if the repository's response contains a BadResumptionToken error
      */
     public ParsedXmlResponse parse(@NonNull InputStream xmlResponse) {
 

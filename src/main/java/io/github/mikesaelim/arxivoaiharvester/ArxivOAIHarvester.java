@@ -1,7 +1,9 @@
 package io.github.mikesaelim.arxivoaiharvester;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import io.github.mikesaelim.arxivoaiharvester.exception.*;
+import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
 import io.github.mikesaelim.arxivoaiharvester.model.request.GetRecordRequest;
 import io.github.mikesaelim.arxivoaiharvester.model.request.ListRecordsRequest;
 import io.github.mikesaelim.arxivoaiharvester.model.request.ResumeListRecordsRequest;
@@ -22,7 +24,9 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URI;
+import java.text.DecimalFormat;
 import java.time.Duration;
 
 /**
@@ -43,6 +47,9 @@ public class ArxivOAIHarvester {
     @Getter @Setter private String userAgentHeader;
     @Getter @Setter private String fromHeader;
 
+    // Scale multiplier for retry wait times, to ensure we don't run afoul of the repository's throttling
+    private static double WAIT_PADDING = 1.1;
+
     /**
      * Construct a harvester with the default settings:
      * <ul>
@@ -55,7 +62,18 @@ public class ArxivOAIHarvester {
         this(httpClient, 3, Duration.ofSeconds(10), Duration.ofMinutes(5));
     }
 
-    public ArxivOAIHarvester(@NonNull CloseableHttpClient httpClient,
+    /**
+     * Construct a harvester with user-specified settings.
+     */
+    public ArxivOAIHarvester(CloseableHttpClient httpClient,
+                             int maxNumRetries,
+                             Duration minWaitBetweenRequests,
+                             Duration maxWaitBetweenRequests) {
+        this(httpClient, new XMLParser(), maxNumRetries, minWaitBetweenRequests, maxWaitBetweenRequests);
+    }
+
+    @VisibleForTesting ArxivOAIHarvester(@NonNull CloseableHttpClient httpClient,
+                             @NonNull XMLParser xmlParser,
                              int maxNumRetries,
                              @NonNull Duration minWaitBetweenRequests,
                              @NonNull Duration maxWaitBetweenRequests) {
@@ -67,11 +85,10 @@ public class ArxivOAIHarvester {
         }
 
         this.httpClient = httpClient;
+        this.xmlParser = xmlParser;
         this.maxNumRetries = maxNumRetries;
         this.minWaitBetweenRequests = minWaitBetweenRequests;
         this.maxWaitBetweenRequests = maxWaitBetweenRequests;
-
-        this.xmlParser = new XMLParser();
     }
 
     /**
@@ -79,11 +96,12 @@ public class ArxivOAIHarvester {
      */
     public GetRecordResponse harvest(@NonNull GetRecordRequest request) throws InterruptedException {
         ParsedXmlResponse xmlResponse = harvest(request.getUri());
+        ArticleMetadata record = !xmlResponse.getRecords().isEmpty() ? xmlResponse.getRecords().get(0) : null;
 
         return GetRecordResponse.builder()
                 .responseDate(xmlResponse.getResponseDate())
                 .request(request)
-                .record(xmlResponse.getRecords().get(0))
+                .record(record)
                 .build();
     }
 
@@ -144,17 +162,17 @@ public class ArxivOAIHarvester {
             httpRequest.addHeader("From", fromHeader);
         }
 
-        int numRetries = 0;
-        while (numRetries <= maxNumRetries) {
-            RepositoryResponse response = tryHarvest(httpRequest);
-            if (response.getParsedXmlResponse() != null) {
-                return response.getParsedXmlResponse();
-            }
+        RepositoryResponse response = tryHarvest(httpRequest);
+        if (response.getParsedXmlResponse() != null) {
+            return response.getParsedXmlResponse();
+        }
 
-            Duration wait = response.getWait();
+        int numRetries = 1;
+        Duration wait = response.getWait();
+        while (numRetries <= maxNumRetries) {
             if (wait.compareTo(maxWaitBetweenRequests) > 0) {
-                String errorString = "Repository-suggested wait time of " + wait +
-                        "exceeds maximum allowed wait time of " + maxWaitBetweenRequests +
+                String errorString = "Repository-suggested wait time of " + formatDurationSeconds(wait) +
+                        " exceeds maximum allowed wait time of " + formatDurationSeconds(maxWaitBetweenRequests) +
                         "; aborting request " + requestUri;
                 log.warn(errorString);
                 throw new TimeoutException(errorString);
@@ -162,12 +180,21 @@ public class ArxivOAIHarvester {
                 wait = minWaitBetweenRequests;
             } else {
                 // Padding to help ensure that we don't retry too early and run afoul of the repository's throttling logic
-                wait = wait.plusSeconds(5);
+                double paddedWaitSeconds = WAIT_PADDING * wait.getSeconds();
+                long paddedWaitMillis = (long) (paddedWaitSeconds * 1000);
+                wait = Duration.ofMillis(paddedWaitMillis);
             }
 
+            log.info("Waiting " + formatDurationSeconds(wait) + " seconds...");
             Thread.sleep(wait.toMillis());
 
+            response = tryHarvest(httpRequest);
+            if (response.getParsedXmlResponse() != null) {
+                return response.getParsedXmlResponse();
+            }
+
             numRetries++;
+            wait = response.getWait();
         }
 
         String errorString = "Too many retries; aborting request " + requestUri;
@@ -244,6 +271,14 @@ public class ArxivOAIHarvester {
             throw new HttpException(e);
         }
 
+    }
+
+    /**
+     * Nicely formats the number of seconds in a Duration.
+     */
+    private String formatDurationSeconds(Duration duration) {
+        return String.format("%2.1f",
+                BigDecimal.valueOf(duration.getSeconds()).add(BigDecimal.valueOf(duration.getNano(), 9)));
     }
 
 

@@ -36,7 +36,7 @@ public final class ResumeListRecordsRequest extends ArxivRequest {
 
     /**
      * Constructs a ResumeListRecordsRequest object.
-     * @throws NullPointerException if resumptionToken is null
+     * @throws NullPointerException if resumptionToken or originalRequest is null
      * @throws URISyntaxException if the input did not create a valid URI
      */
     public ResumeListRecordsRequest(@NonNull String resumptionToken, @NonNull ListRecordsRequest originalRequest)
