@@ -44,7 +44,15 @@ public class ListRecordsResponse implements ArxivResponse {
     private BigInteger cursor;
     private BigInteger completeListSize;
 
+    /**
+     * Create a {@link ResumeListRecordsRequest} that resumes this request if there are more pages left in the response.
+     * If there are no more pages left, this will return {@link ResumeListRecordsRequest#NONE}.
+     */
     public ResumeListRecordsRequest resumption() {
+        if (resumptionToken == null) {
+            return ResumeListRecordsRequest.NONE;
+        }
+
         try {
             return new ResumeListRecordsRequest(resumptionToken, request);
         } catch (URISyntaxException e) {

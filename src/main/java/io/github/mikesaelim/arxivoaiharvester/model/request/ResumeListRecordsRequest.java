@@ -1,5 +1,6 @@
 package io.github.mikesaelim.arxivoaiharvester.model.request;
 
+import io.github.mikesaelim.arxivoaiharvester.model.response.ListRecordsResponse;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -18,6 +19,12 @@ import java.net.URISyntaxException;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 public final class ResumeListRecordsRequest extends ArxivRequest {
+
+    /**
+     * Static dummy value that gets returned when a {@link ListRecordsResponse} has no resumption.
+     */
+    public static ResumeListRecordsRequest NONE = createNone();
+
 
     /**
      * Resumption token returned by the last ListRecords response.
@@ -54,5 +61,14 @@ public final class ResumeListRecordsRequest extends ArxivRequest {
                 .setParameter("resumptionToken", resumptionToken)
                 .build();
     }
+
+    private static ResumeListRecordsRequest createNone() {
+        try {
+            return new ResumeListRecordsRequest("", new ListRecordsRequest(null, null, null));
+        } catch (URISyntaxException e) {
+            throw new Error("Error creating ResumeListRecordsRequest.NONE");
+        }
+    }
+
 
 }
