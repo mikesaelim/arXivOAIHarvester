@@ -26,7 +26,6 @@ import org.apache.http.util.EntityUtils;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
-import java.text.DecimalFormat;
 import java.time.Duration;
 
 /**

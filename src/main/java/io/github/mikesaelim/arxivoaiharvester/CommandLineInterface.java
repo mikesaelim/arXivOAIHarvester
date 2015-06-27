@@ -1,19 +1,5 @@
 package io.github.mikesaelim.arxivoaiharvester;
 
-import io.github.mikesaelim.arxivoaiharvester.model.request.GetRecordRequest;
-import io.github.mikesaelim.arxivoaiharvester.model.request.ListRecordsRequest;
-import io.github.mikesaelim.arxivoaiharvester.model.request.ArxivRequest;
-import io.github.mikesaelim.arxivoaiharvester.model.response.ArxivResponse;
-import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
-import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleVersion;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-
-import java.net.URISyntaxException;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Scanner;
-
 /**
  * TODO javadoc
  */

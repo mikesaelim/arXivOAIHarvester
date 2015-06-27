@@ -2,12 +2,10 @@ package io.github.mikesaelim.arxivoaiharvester.xml;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import io.github.mikesaelim.arxivoaiharvester.exception.*;
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleVersion;
 import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.arxiv.oai.arxivraw.ArXivRawType;
 import org.openarchives.oai._2.*;

@@ -2,10 +2,8 @@ package io.github.mikesaelim.arxivoaiharvester.model.response;
 
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
 import io.github.mikesaelim.arxivoaiharvester.model.request.GetRecordRequest;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
-import lombok.Value;
 import lombok.Builder;
+import lombok.Value;
 
 import java.time.ZonedDateTime;
 

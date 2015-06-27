@@ -1,6 +1,9 @@
 package io.github.mikesaelim.arxivoaiharvester.model.request;
 
-import lombok.*;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.ToString;
 
 import java.net.URI;
 import java.net.URISyntaxException;

@@ -5,10 +5,8 @@ import io.github.mikesaelim.arxivoaiharvester.exception.BadResumptionTokenExcept
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
 import io.github.mikesaelim.arxivoaiharvester.model.request.ListRecordsRequest;
 import io.github.mikesaelim.arxivoaiharvester.model.request.ResumeListRecordsRequest;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
-import lombok.Value;
 import lombok.Builder;
+import lombok.Value;
 
 import java.math.BigInteger;
 import java.net.URISyntaxException;
