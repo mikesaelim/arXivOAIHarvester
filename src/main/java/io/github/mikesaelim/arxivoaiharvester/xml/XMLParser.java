@@ -220,7 +220,6 @@ public class XMLParser {
                 .license(normalizeSpace(metadata.getLicense()))
                 .articleAbstract(normalizeSpace(metadata.getAbstract()));
 
-        // TODO handle line breaks in strings with StringUtils.normalizeSpace() if testing deems it necessary
         return articleBuilder.build();
     }
 

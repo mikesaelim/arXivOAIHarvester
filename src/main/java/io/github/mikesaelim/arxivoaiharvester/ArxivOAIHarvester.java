@@ -9,7 +9,9 @@ import io.github.mikesaelim.arxivoaiharvester.model.response.GetRecordResponse;
 import io.github.mikesaelim.arxivoaiharvester.model.response.ListRecordsResponse;
 import io.github.mikesaelim.arxivoaiharvester.xml.ParsedXmlResponse;
 import io.github.mikesaelim.arxivoaiharvester.xml.XMLParser;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHeaders;
@@ -34,12 +36,12 @@ public class ArxivOAIHarvester {
     private final CloseableHttpClient httpClient;
     private final XMLParser xmlParser;
 
-    private final int maxNumRetries;
-    private final Duration minWaitBetweenRequests;
-    private final Duration maxWaitBetweenRequests;
+    @Getter private final int maxNumRetries;
+    @Getter private final Duration minWaitBetweenRequests;
+    @Getter private final Duration maxWaitBetweenRequests;
 
-    private final String userAgentHeader;
-    private final String fromHeader;
+    @Getter @Setter private String userAgentHeader;
+    @Getter @Setter private String fromHeader;
 
     /**
      * Construct a harvester with the default settings:
@@ -49,16 +51,14 @@ public class ArxivOAIHarvester {
      *     <li>Maximum wait time between requests: 5 minutes</li>
      * </ul>
      */
-    public ArxivOAIHarvester(CloseableHttpClient httpClient, String userAgentHeader, String fromHeader) {
-        this(httpClient, 3, Duration.ofSeconds(10), Duration.ofMinutes(5), userAgentHeader, fromHeader);
+    public ArxivOAIHarvester(CloseableHttpClient httpClient) {
+        this(httpClient, 3, Duration.ofSeconds(10), Duration.ofMinutes(5));
     }
 
     public ArxivOAIHarvester(@NonNull CloseableHttpClient httpClient,
                              int maxNumRetries,
                              @NonNull Duration minWaitBetweenRequests,
-                             @NonNull Duration maxWaitBetweenRequests,
-                             String userAgentHeader,
-                             String fromHeader) {
+                             @NonNull Duration maxWaitBetweenRequests) {
         if (maxNumRetries < 0) {
             throw new IllegalArgumentException("Maximum number of retries must be 0 or greater");
         }
@@ -70,8 +70,6 @@ public class ArxivOAIHarvester {
         this.maxNumRetries = maxNumRetries;
         this.minWaitBetweenRequests = minWaitBetweenRequests;
         this.maxWaitBetweenRequests = maxWaitBetweenRequests;
-        this.userAgentHeader = userAgentHeader;
-        this.fromHeader = fromHeader;
 
         this.xmlParser = new XMLParser();
     }
@@ -139,8 +137,12 @@ public class ArxivOAIHarvester {
      */
     private ParsedXmlResponse harvest(@NonNull URI requestUri) throws InterruptedException {
         HttpGet httpRequest = new HttpGet(requestUri);
-        httpRequest.addHeader("User-Agent", userAgentHeader);
-        httpRequest.addHeader("From", fromHeader);
+        if (userAgentHeader != null) {
+            httpRequest.addHeader("User-Agent", userAgentHeader);
+        }
+        if (fromHeader != null) {
+            httpRequest.addHeader("From", fromHeader);
+        }
 
         int numRetries = 0;
         while (numRetries <= maxNumRetries) {
@@ -243,6 +245,7 @@ public class ArxivOAIHarvester {
         }
 
     }
+
 
     /**
      * POJO to hold responses from the arXiv OAI repository that we can do something with: either a parsed XML response
