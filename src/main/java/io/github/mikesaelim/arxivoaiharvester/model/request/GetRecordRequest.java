@@ -18,7 +18,7 @@ import java.net.URISyntaxException;
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public final class GetRecordRequest extends ArxivRequest {
+public class GetRecordRequest extends ArxivRequest {
 
     /**
      * Unique identifier of the record.  For records in the arXiv OAI repository, this starts with "oai:arXiv.org:".

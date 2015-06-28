@@ -1,5 +1,6 @@
 package io.github.mikesaelim.arxivoaiharvester.model.request;
 
+import io.github.mikesaelim.arxivoaiharvester.model.response.ListRecordsResponse;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -12,14 +13,13 @@ import java.time.LocalDate;
 /**
  * A ListRecords request, used to retrieve a range of records between two datestamps.
  *
- * Note that ListRecords responses may be paginated.  This class only represents the initial request to the repository,
- * and subsequent pages are retrieved by sending {@link ResumeListRecordsRequest}s to the harvester, which contain the
- * resumption token sent back by the last response.
+ * Note that ListRecords responses may be paginated.  {@link ResumeListRecordsRequest} is a ListRecordsRequest that
+ * continues the original request by sending back the resumption token received from the last response.
  */
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public final class ListRecordsRequest extends ArxivRequest {
+public class ListRecordsRequest extends ArxivRequest {
 
     /**
      * Optional lower bound of the datestamp range.  If null, the range is unbounded from below.
@@ -39,7 +39,7 @@ public final class ListRecordsRequest extends ArxivRequest {
     /**
      * The URI for the initial request to the repository, created from these settings.
      */
-    private final URI uri;
+    protected URI uri;
 
     /**
      * Constructs a ListRecordsRequest object.  All parameters are optional.
@@ -76,6 +76,21 @@ public final class ListRecordsRequest extends ArxivRequest {
         }
 
         return uriBuilder.build();
+    }
+
+
+
+    /**
+     * Static dummy value that gets returned when a {@link ListRecordsResponse} has no resumption.
+     */
+    public static ListRecordsRequest NONE = createNone();
+
+    private static ListRecordsRequest createNone() {
+        try {
+            return new ListRecordsRequest(LocalDate.MAX, LocalDate.MAX, null);
+        } catch (URISyntaxException e) {
+            throw new Error("Error creating ListRecordsRequest.NONE");
+        }
     }
 
 }

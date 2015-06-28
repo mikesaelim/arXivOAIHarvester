@@ -15,18 +15,21 @@ public class ListRecordsResponseTest {
                 .resumptionToken("resumptionToken")
                 .build();
 
-        ResumeListRecordsRequest resumption = response.resumption();
+        ListRecordsRequest resumption = response.resumption();
 
-        assertEquals("resumptionToken", resumption.getResumptionToken());
-        assertEquals(response.getRequest(), resumption.getOriginalRequest());
+        assertNotEquals(ListRecordsRequest.NONE, resumption);
+        assertTrue(resumption instanceof ResumeListRecordsRequest);
+
+        assertEquals("resumptionToken", ((ResumeListRecordsRequest) resumption).getResumptionToken());
+        assertEquals(response.getRequest(), ((ResumeListRecordsRequest) resumption).getOriginalRequest());
     }
 
     @Test
     public void testNoResumption() throws Exception {
         ListRecordsResponse response = ListRecordsResponse.builder().build();
 
-        ResumeListRecordsRequest resumption = response.resumption();
+        ListRecordsRequest resumption = response.resumption();
 
-        assertEquals(ResumeListRecordsRequest.NONE, resumption);
+        assertEquals(ListRecordsRequest.NONE, resumption);
     }
 }

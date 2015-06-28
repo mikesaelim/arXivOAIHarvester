@@ -3,7 +3,6 @@ package io.github.mikesaelim.arxivoaiharvester;
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleVersion;
 import io.github.mikesaelim.arxivoaiharvester.model.request.*;
-import io.github.mikesaelim.arxivoaiharvester.model.response.ArxivResponse;
 import io.github.mikesaelim.arxivoaiharvester.model.response.GetRecordResponse;
 import io.github.mikesaelim.arxivoaiharvester.model.response.ListRecordsResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -47,6 +46,7 @@ public class CommandLineInterface {
     }
 
 
+
     /**
      * Handle "GetRecord" requests.
      */
@@ -78,56 +78,20 @@ public class CommandLineInterface {
         System.out.println("Sweet, let's do a ListRecords query.");
         System.out.println();
 
-        ListRecordsRequest originalRequest = constructListRecordsRequest(scanner);
+        ListRecordsRequest request = constructListRecordsRequest(scanner);
         System.out.println();
 
-        System.out.println("Sending ListRecords request, waiting for response...");
-        ListRecordsResponse response = harvester.harvest(originalRequest);
+        while (request != ListRecordsRequest.NONE) {
+            System.out.println("Sending ListRecords request, waiting for response......");
+            ListRecordsResponse response = harvester.harvest(request);
 
-        ResumeListRecordsRequest nextRequest;
-        do {
-            System.out.println("Response received!");
-            printLine("    Response datetime: ", response.getResponseDate());
-            List<ArticleMetadata> records = response.getRecords();
-            if (records.size() == 0) {
-                System.out.println("    No records found.");
-                return;
-            }
-            printLine("    Number of records retrieved in this batch: ", records.size());
-            if (response.getResumptionToken() != null) {
-                System.out.println("    Resumption token returned - there is another batch of records after this one.");
-            }
-            printLine("    Current cursor position: ", response.getCursor());
-            printLine("    Complete list size: ", response.getCompleteListSize());
-            System.out.println();
+            boolean shouldContinueLoop = handleListRecordResponse(scanner, response);
+            if (!shouldContinueLoop) break;
 
-            System.out.println("Now you can view each of the records in this batch individually.  Simply press ENTER to " +
-                    "bring up the next record.  If there is another batch after this one, the harvester will make a " +
-                    "request to retrieve it when you get to the end.  Type \'q\' and ENTER to exit.");
-            for (int recordNumber = 0; recordNumber < records.size(); recordNumber++) {
-                String readerInput = scanner.nextLine();
-                if ("q".equals(readerInput.trim())) {
-                    return;
-                }
-
-                System.out.println("************ Record " + (recordNumber + 1) + " of " + records.size() + " ************");
-                printRecord(records.get(recordNumber));
-                System.out.println();
-            }
-
-            System.out.println("***************************************");
-
-            if (response.getResumptionToken() == null) {
-                System.out.println("End of records.");
-            } else {
-                System.out.println("End of records, but there is another batch after this.  Sending resumption request," +
-                        "waiting for response...");
-            }
-
-            nextRequest = response.resumption();
-        } while (nextRequest != ResumeListRecordsRequest.NONE);
-
+            request = response.resumption();
+        }
     }
+
 
 
     /**
@@ -176,6 +140,56 @@ public class CommandLineInterface {
                 System.out.println(    "Sorry, the inputs did not result in a valid request URI.  Try again?");
             }
         }
+    }
+
+
+
+    /**
+     * Handle a single response to a "ListRecords" request.
+     */
+    private static boolean handleListRecordResponse(Scanner scanner, ListRecordsResponse response) {
+        System.out.println("Response received!");
+        printLine("    Response datetime: ", response.getResponseDate());
+        List<ArticleMetadata> records = response.getRecords();
+        if (records.size() == 0) {
+            System.out.println("    No records found.");
+            return true;  // No records found, but there still could be a legal resumption token returned.
+        }
+        printLine("    Number of records retrieved in this batch: ", records.size());
+        if (response.hasResumption()) {
+            System.out.println("    Resumption token returned - there is another batch of records after this one.");
+        }
+        printLine("    Current cursor position: ", response.getCursor());
+        printLine("    Complete list size: ", response.getCompleteListSize());
+        System.out.println();
+
+        System.out.println("Now you can view each of the records in this batch individually.  Simply press ENTER to " +
+                "bring up the next record.  If there is another batch after this one, the harvester will make a " +
+                "request to retrieve it when you get to the end.  Type \'q\' and ENTER to exit.");
+        for (int recordNumber = 0; recordNumber < records.size(); recordNumber+=999) {
+            String readerInput = scanner.nextLine();
+            if ("q".equals(readerInput.trim())) {
+                return false;
+            }
+
+            System.out.println("************ Record " + (recordNumber + 1) + " of " + records.size() + " ************");
+            printRecord(records.get(recordNumber));
+            System.out.println("***************************************");
+            System.out.println();
+        }
+
+        if (!response.hasResumption()) {
+            System.out.println("End of records.");
+        } else {
+            System.out.println("End of records, but there is another batch after this.  Press ENTER to send the " +
+                    "resumption request.  Type \'q\' and ENTER to exit.");
+            String readerInput = scanner.nextLine();
+            if ("q".equals(readerInput.trim())) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
 

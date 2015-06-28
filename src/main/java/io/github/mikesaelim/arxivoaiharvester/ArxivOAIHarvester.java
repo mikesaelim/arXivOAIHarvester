@@ -110,26 +110,16 @@ public class ArxivOAIHarvester {
     public ListRecordsResponse harvest(@NonNull ListRecordsRequest request) {
         ParsedXmlResponse xmlResponse = harvest(request.getUri());
 
-        return ListRecordsResponse.builder()
-                .responseDate(xmlResponse.getResponseDate())
-                .request(request)
-                .records(ImmutableList.copyOf(xmlResponse.getRecords()))
-                .resumptionToken(xmlResponse.getResumptionToken())
-                .cursor(xmlResponse.getCursor())
-                .completeListSize(xmlResponse.getCompleteListSize())
-                .build();
-    }
+        ListRecordsResponse.ListRecordsResponseBuilder response =  ListRecordsResponse.builder()
+                .responseDate(xmlResponse.getResponseDate());
 
-    /**
-     * See {@link #harvest(URI)} for exceptions.  Not thread-safe.
-     */
-    public ListRecordsResponse harvest(@NonNull ResumeListRecordsRequest request) {
-        ParsedXmlResponse xmlResponse = harvest(request.getUri());
+        if (request instanceof ResumeListRecordsRequest) {
+            response = response.request(((ResumeListRecordsRequest) request).getOriginalRequest());
+        } else {
+            response = response.request(request);
+        }
 
-        return ListRecordsResponse.builder()
-                .responseDate(xmlResponse.getResponseDate())
-                .request(request.getOriginalRequest())
-                .records(ImmutableList.copyOf(xmlResponse.getRecords()))
+        return response.records(ImmutableList.copyOf(xmlResponse.getRecords()))
                 .resumptionToken(xmlResponse.getResumptionToken())
                 .cursor(xmlResponse.getCursor())
                 .completeListSize(xmlResponse.getCompleteListSize())

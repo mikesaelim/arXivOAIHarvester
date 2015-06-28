@@ -12,6 +12,8 @@ import java.math.BigInteger;
 import java.net.URISyntaxException;
 import java.time.ZonedDateTime;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 @Value
 @Builder
 public class ListRecordsResponse implements ArxivResponse {
@@ -45,12 +47,19 @@ public class ListRecordsResponse implements ArxivResponse {
     private BigInteger completeListSize;
 
     /**
-     * Create a {@link ResumeListRecordsRequest} that resumes this request if there are more pages left in the response.
-     * If there are no more pages left, this will return {@link ResumeListRecordsRequest#NONE}.
+     * @return whether or not there are more pages left in the response
      */
-    public ResumeListRecordsRequest resumption() {
+    public boolean hasResumption() {
+        return !isBlank(resumptionToken);
+    }
+
+    /**
+     * Create a {@link ListRecordsRequest} that resumes this request if there are more pages left in the response.
+     * If there are no more pages left, this will return {@link ListRecordsRequest#NONE}.
+     */
+    public ListRecordsRequest resumption() {
         if (resumptionToken == null) {
-            return ResumeListRecordsRequest.NONE;
+            return ListRecordsRequest.NONE;
         }
 
         try {
