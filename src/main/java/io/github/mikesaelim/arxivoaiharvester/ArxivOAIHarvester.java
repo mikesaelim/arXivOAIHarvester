@@ -93,7 +93,7 @@ public class ArxivOAIHarvester {
     /**
      * See {@link #harvest(URI)} for exceptions.  Not thread-safe.
      */
-    public GetRecordResponse harvest(@NonNull GetRecordRequest request) throws InterruptedException {
+    public GetRecordResponse harvest(@NonNull GetRecordRequest request) {
         ParsedXmlResponse xmlResponse = harvest(request.getUri());
         ArticleMetadata record = !xmlResponse.getRecords().isEmpty() ? xmlResponse.getRecords().get(0) : null;
 
@@ -107,7 +107,7 @@ public class ArxivOAIHarvester {
     /**
      * See {@link #harvest(URI)} for exceptions.  Not thread-safe.
      */
-    public ListRecordsResponse harvest(@NonNull ListRecordsRequest request) throws InterruptedException {
+    public ListRecordsResponse harvest(@NonNull ListRecordsRequest request) {
         ParsedXmlResponse xmlResponse = harvest(request.getUri());
 
         return ListRecordsResponse.builder()
@@ -123,7 +123,7 @@ public class ArxivOAIHarvester {
     /**
      * See {@link #harvest(URI)} for exceptions.  Not thread-safe.
      */
-    public ListRecordsResponse harvest(@NonNull ResumeListRecordsRequest request) throws InterruptedException {
+    public ListRecordsResponse harvest(@NonNull ResumeListRecordsRequest request) {
         ParsedXmlResponse xmlResponse = harvest(request.getUri());
 
         return ListRecordsResponse.builder()
@@ -145,14 +145,14 @@ public class ArxivOAIHarvester {
      *
      * @throws NullPointerException if requestUri is null
      * @throws HttpException if there is a problem communicating with the repository
-     * @throws InterruptedException if the process is interrupted
+     * @throws InterruptedError if the process is interrupted
      * @throws TimeoutException if there have been too many retries, or the repository has suggested a wait time that is too long
      * @throws ParseException if parsing fails
      * @throws RepositoryError if the repository's response was parseable but invalid
      * @throws BadArgumentException if the repository's response contains a BadArgument error
      * @throws BadResumptionTokenException if the repository's response contains a BadResumptionToken error
      */
-    private ParsedXmlResponse harvest(@NonNull URI requestUri) throws InterruptedException {
+    private ParsedXmlResponse harvest(@NonNull URI requestUri) {
         HttpGet httpRequest = new HttpGet(requestUri);
         if (userAgentHeader != null) {
             httpRequest.addHeader("User-Agent", userAgentHeader);
@@ -185,7 +185,12 @@ public class ArxivOAIHarvester {
             }
 
             log.info("Waiting " + formatDurationSeconds(wait) + " seconds...");
-            Thread.sleep(wait.toMillis());
+            try {
+                Thread.sleep(wait.toMillis());
+            } catch (InterruptedException e) {
+                log.error("Retry loop interrupted", e);
+                throw new InterruptedError(e);
+            }
 
             response = tryHarvest(httpRequest);
             if (response.getParsedXmlResponse() != null) {
