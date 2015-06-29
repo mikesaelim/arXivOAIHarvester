@@ -1,7 +1,6 @@
 package io.github.mikesaelim.arxivoaiharvester.xml;
 
 import com.google.common.collect.Sets;
-import com.sun.org.apache.xerces.internal.jaxp.datatype.XMLGregorianCalendarImpl;
 import io.github.mikesaelim.arxivoaiharvester.exception.BadArgumentException;
 import io.github.mikesaelim.arxivoaiharvester.exception.BadResumptionTokenException;
 import io.github.mikesaelim.arxivoaiharvester.exception.ParseException;
@@ -10,6 +9,7 @@ import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleVersion;
 import org.junit.Test;
 
+import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.InputStream;
 import java.time.LocalDate;
@@ -190,7 +190,7 @@ public class XMLParserTest {
     @Test
     public void testParseResponseDate() throws Exception {
         ZonedDateTime answer = ZonedDateTime.of(2015, 6, 23, 5, 14, 59, 0, ZoneOffset.UTC);
-        XMLGregorianCalendar input = new XMLGregorianCalendarImpl(GregorianCalendar.from(answer));
+        XMLGregorianCalendar input = DatatypeFactory.newInstance().newXMLGregorianCalendar(GregorianCalendar.from(answer));
 
         assertEquals(answer, xmlParser.parseResponseDate(input));
     }
