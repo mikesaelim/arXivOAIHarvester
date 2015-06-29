@@ -19,7 +19,7 @@ Informational links:
     * [Formal definition of the OAI protocol](http://www.openarchives.org/OAI/openarchivesprotocol.html)
 
 
-####Covering my ass
+#####Covering my ass
 
 I mostly designed this library to support a future larger project of mine, and for educational purposes to give me more
 practice coding and designing.  No guarantees on current reliability and future support!  If you prioritize these things,
