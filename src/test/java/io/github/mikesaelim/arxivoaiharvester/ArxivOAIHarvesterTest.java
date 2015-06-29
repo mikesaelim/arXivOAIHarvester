@@ -17,7 +17,9 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Stopwatch;
 import org.mockito.*;
 
 import java.io.IOException;
@@ -26,6 +28,7 @@ import java.math.BigInteger;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -47,6 +50,9 @@ public class ArxivOAIHarvesterTest {
 
     @Captor
     private ArgumentCaptor<HttpGet> getRequestCaptor;
+
+    @Rule
+    public Stopwatch stopwatch = new Stopwatch() {};
 
 
     // Harvester test settings - we use short wait times for testing
@@ -156,28 +162,63 @@ public class ArxivOAIHarvesterTest {
 
     @Test
     public void testHarvestWithRetries() throws Exception {
+        // The first wait time returned by the repository is between the minimum and maximum.
         CloseableHttpResponse waitHttpResponse1 = mock(CloseableHttpResponse.class,
                 withSettings().defaultAnswer(RETURNS_DEEP_STUBS));
         when(waitHttpResponse1.getStatusLine().getStatusCode()).thenReturn(HttpStatus.SC_SERVICE_UNAVAILABLE);
         when(waitHttpResponse1.getFirstHeader(HttpHeaders.RETRY_AFTER).getValue()).thenReturn("3");
+        // The second wait time returned by the repository is below the minimum, so it should get bumped up to the minimum.
         CloseableHttpResponse waitHttpResponse2 = mock(CloseableHttpResponse.class,
                 withSettings().defaultAnswer(RETURNS_DEEP_STUBS));
         when(waitHttpResponse2.getStatusLine().getStatusCode()).thenReturn(HttpStatus.SC_SERVICE_UNAVAILABLE);
         when(waitHttpResponse2.getFirstHeader(HttpHeaders.RETRY_AFTER).getValue()).thenReturn("1");
-
-        // These givens now configure the final response from the repository
-        givenHttpResponseIsOK();
+        // This now configures the final response from the repository
+        when(httpResponse.getStatusLine().getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        when(httpResponse.getEntity().getContent()).thenReturn(mock(InputStream.class));
         givenRepositoryResponseIsSuccessful();
 
         when(httpClient.execute(any(HttpGet.class))).thenReturn(waitHttpResponse1)
                                                     .thenReturn(waitHttpResponse2)
                                                     .thenReturn(httpResponse);
 
+        long startTime = stopwatch.runtime(TimeUnit.NANOSECONDS);
         GetRecordResponse response = harvester.harvest(getRecordRequest);
+        long endTime = stopwatch.runtime(TimeUnit.NANOSECONDS);
 
         verify(httpClient, times(3)).execute(any(HttpGet.class));
         verify(xmlParser, times(1)).parse(any(InputStream.class));
+
+        Duration elapsedTime = Duration.ofNanos(endTime - startTime);
+        assertTrue(elapsedTime.compareTo(Duration.ofSeconds(5)) > 0);
+
         assertEquals(parsedXmlResponse.getResponseDate(), response.getResponseDate());
+    }
+
+
+
+    // Tests: initial wait caused by trying to send a new request too soon after the last one
+
+    @Test
+    public void testHarvestWithInitialWait() throws Exception {
+        // This makes the harvest finish without parsing
+        givenHttpResponseIsNotFound();
+
+        try {
+            harvester.harvest(getRecordRequest);
+        } catch (RepositoryError e) {
+            // do nothing
+        }
+
+        long startTime = stopwatch.runtime(TimeUnit.NANOSECONDS);
+        try {
+            harvester.harvest(getRecordRequest);
+        } catch (RepositoryError e) {
+            // do nothing
+        }
+        long endTime = stopwatch.runtime(TimeUnit.NANOSECONDS);
+
+        Duration elapsedTime = Duration.ofNanos(endTime - startTime);
+        assertTrue(elapsedTime.compareTo(MIN_WAIT_BETWEEN_REQUESTS) > 0);
     }
 
 

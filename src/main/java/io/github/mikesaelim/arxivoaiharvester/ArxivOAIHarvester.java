@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.time.Duration;
+import java.time.Instant;
 
 /**
  * TODO javadoc
@@ -48,6 +49,8 @@ public class ArxivOAIHarvester {
 
     // Scale multiplier for retry wait times, to ensure we don't run afoul of the repository's throttling
     private static double WAIT_PADDING = 1.1;
+
+    private Instant lastResponseReceived;
 
     /**
      * Construct a harvester with the default settings:
@@ -88,6 +91,8 @@ public class ArxivOAIHarvester {
         this.maxNumRetries = maxNumRetries;
         this.minWaitBetweenRequests = minWaitBetweenRequests;
         this.maxWaitBetweenRequests = maxWaitBetweenRequests;
+
+        lastResponseReceived = Instant.MIN;
     }
 
     /**
@@ -149,6 +154,19 @@ public class ArxivOAIHarvester {
         }
         if (fromHeader != null) {
             httpRequest.addHeader("From", fromHeader);
+        }
+
+        // Before the first attempt, check if we are requesting too soon after the last request, and delay if necessary.
+        Duration durationSinceLastResponseReceived = Duration.between(lastResponseReceived, Instant.now());
+        if (durationSinceLastResponseReceived.compareTo(minWaitBetweenRequests) < 0) {
+            Duration durationToWait = minWaitBetweenRequests.minus(durationSinceLastResponseReceived);
+            log.info("Too soon since sending last request - waiting " + formatDurationSeconds(durationToWait) + " seconds...");
+            try {
+                Thread.sleep(durationToWait.toMillis());
+            } catch (InterruptedException e) {
+                log.error("Initial wait interrupted", e);
+                throw new InterruptedError(e);
+            }
         }
 
         RepositoryResponse response = tryHarvest(httpRequest);
@@ -213,6 +231,7 @@ public class ArxivOAIHarvester {
         log.info("Sending request to arXiv OAI repository: {}", httpRequest.getURI());
 
         try (CloseableHttpResponse httpResponse = httpClient.execute(httpRequest)) {
+            lastResponseReceived = Instant.now();
             int httpStatusCode = httpResponse.getStatusLine().getStatusCode();
 
             switch (httpStatusCode) {
@@ -252,7 +271,7 @@ public class ArxivOAIHarvester {
 
                 default:
                     // Unfortunately, we currently aren't prepared to handle other HTTP status codes.  The OAI specs
-                    // don't really say what to do for most of them.  So we log a warning and return an error response.
+                    // don't really say what to do for most of them.  So we log and return an error response.
                     String defaultErrorString = "Request to arXiv OAI repository " + httpRequest.getURI() +
                             " returned status code " + httpStatusCode + ": " +
                             httpResponse.getStatusLine().getReasonPhrase() + ": " +
