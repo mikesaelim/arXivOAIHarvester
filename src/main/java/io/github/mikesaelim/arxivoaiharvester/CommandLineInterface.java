@@ -17,7 +17,8 @@ import java.util.Scanner;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 /**
- * TODO javadoc
+ * Command line interface, showing an example of using the arXiv OAI Harvester.  It accepts the parameters for one query
+ * and prints the results to the console.
  */
 public class CommandLineInterface {
 

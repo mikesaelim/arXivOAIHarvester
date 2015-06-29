@@ -4,9 +4,11 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import io.github.mikesaelim.arxivoaiharvester.exception.*;
 import io.github.mikesaelim.arxivoaiharvester.model.data.ArticleMetadata;
+import io.github.mikesaelim.arxivoaiharvester.model.request.ArxivRequest;
 import io.github.mikesaelim.arxivoaiharvester.model.request.GetRecordRequest;
 import io.github.mikesaelim.arxivoaiharvester.model.request.ListRecordsRequest;
 import io.github.mikesaelim.arxivoaiharvester.model.request.ResumeListRecordsRequest;
+import io.github.mikesaelim.arxivoaiharvester.model.response.ArxivResponse;
 import io.github.mikesaelim.arxivoaiharvester.model.response.GetRecordResponse;
 import io.github.mikesaelim.arxivoaiharvester.model.response.ListRecordsResponse;
 import io.github.mikesaelim.arxivoaiharvester.xml.ParsedXmlResponse;
@@ -18,6 +20,7 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -30,9 +33,57 @@ import java.time.Duration;
 import java.time.Instant;
 
 /**
- * TODO javadoc
+ * This is the central harvester class.
  *
- * This class is most definitely not thread-safe.
+ * Users pass objects extending {@link ArxivRequest} in to one of the public harvest() methods, wait for the harvester
+ * to retrieve and parse the results from the arXiv OAI repository, and receive an {@link ArxivResponse} containing the
+ * records returned.  This wait generally takes at least seconds, and possibly as much as minutes, as the arXiv OAI
+ * repository throttles requests and forces the harvester to retry at a later time.  If any problems are encountered,
+ * the harvester throws one of many exceptions detailed in the javadoc for {@link #harvest(URI)}.
+ *
+ * See the README.md for general information, especially information on using the harvester.
+ *
+ * This class is most definitely blocking and not thread-safe.  Do not use let more than one thread use it.
+ *
+ *
+ *
+ *** Implementation and Design Details
+ *
+ * Since the harvester effectively functions as a wrapper around a {@link HttpClient}, its interface was slightly based
+ * on HttpClient's, receiving requests and returning responses.  Once its initial parameters are set, the harvester is
+ * stateless, except for holding the instant that the last response was received for flow control purposes.
+ *
+ * There are three flow control parameters: the maximum number of retries, the minimum wait between requests to the
+ * repository, and the maximum wait.  These are necessary because the repository may send back a 503 Retry-After
+ * response that forces the harvester to wait a certain number of seconds before trying again - if the harvester does
+ * not comply, the wait increases.
+ *
+ * So, this harvester complies.  When the user invokes one of the harvest methods with an {@link ArxivRequest}, the
+ * harvester first checks the duration since the last response was received, and waits if that duration is smaller than
+ * the minimum wait between requests.  If the harvester receives a 503 Retry-After response, the wait duration that the
+ * repository suggests could fall in one of three buckets:
+ * <ul>
+ *     <li>if the suggested wait is less than the minimum wait between requests, the harvester will wait the minimum,</li>
+ *     <li>if the suggested wait is between the minimum and maximum, the harvester will pad the wait by a small amount,
+ *     because the cost of sending just a little too early is waiting even longer, and</li>
+ *     <li>if the suggested wait is more than the maximum wait between requests, the process will timeout.</li>
+ * </ul>
+ * The process will also timeout if it ends up going through more retries than the maximum number of retries.
+ *
+ * Under the OAI protocol, the repository can also send back 302 Redirect responses, but the harvester doesn't currently
+ * have a way to deal with that.
+ *
+ * The current implementation of the harvester is not intended to be used in a multithreaded environment.  Multiple
+ * threads using a harvester, or even several harvesters, should be avoided anyway because the repository throttles
+ * requests from the same machine/IP, so requests from multiple threads will create a lot of 503 Retry-After responses
+ * and timeouts.  The OAI protocol was designed for bulk data update access anyway, not on-demand access.
+ *
+ * The current implementation of the harvester is blocking.  The thread invoking the harvest() method will be forced to
+ * wait while the harvester sends the request, retrieves a (possibly lengthy) response, parses that response, and
+ * complies with 503 Retry-After throttling.  This wait could last as much as
+ *      minWaitBetweenRequests + (maxNumRetries - 1) * maxWaitBetweenRequests + local processing time.
+ * A future update may change the implementation to be non-blocking, by resolving requests asynchronously with a request
+ * queue and a single thread devoted to executing them.
  */
 @Slf4j
 public class ArxivOAIHarvester {
@@ -48,7 +99,7 @@ public class ArxivOAIHarvester {
     @Getter @Setter private String fromHeader;
 
     // Scale multiplier for retry wait times, to ensure we don't run afoul of the repository's throttling
-    private static double WAIT_PADDING = 1.1;
+    private static final double WAIT_PADDING = 1.1;
 
     private Instant lastResponseReceived;
 
