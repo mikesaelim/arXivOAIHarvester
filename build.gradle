@@ -1,7 +1,9 @@
 apply plugin: 'application'
 apply plugin: 'java'
+apply plugin: 'maven-publish'
 
 sourceCompatibility = 1.8
+group = 'io.github.mikesaelim.arxivoaiharvester'
 version = '0.0.0'
 
 repositories {
@@ -26,4 +28,12 @@ mainClassName = "io.github.mikesaelim.arxivoaiharvester.CommandLineInterface"
 
 run {
     standardInput = System.in
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
 }
