@@ -3,7 +3,7 @@ arXiv OAI Harvester
 
 Copyright (c) 2015 Mike Saelim, mike.saelim@gmail.com
 
-[**Current version**](http://semver.org/): 0.0.0
+[**Current version**](http://semver.org/): 0.1.0
 
 This is an OAI Harvester library for the arXiv preprint repository, written in Java.  At this point, it is still a work
 in progress.
