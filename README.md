@@ -127,7 +127,7 @@ exception or error - see the javadoc for `ArxivOAIHarvester` for a full list.
 I've supplied a `CommandLineInterface` class with an executable `main()` method that executes one request to the arXiv
 OAI repository.  You can run this either by building the jar and running it, or by typing
 
-    gradle clean run
+    ./gradlew clean run
     
 in the repository directory.  This should give you a feel for how it all behaves.
 
