@@ -3,8 +3,9 @@ apply plugin: 'java'
 apply plugin: 'maven-publish'
 
 sourceCompatibility = 1.8
-group = 'io.github.mikesaelim.arxivoaiharvester'
-version = '0.1.0'
+targetCompatibility = 1.8
+group = 'io.github.mikesaelim'
+version = '0.1.1'
 
 repositories {
     mavenCentral()
@@ -12,14 +13,13 @@ repositories {
 }
 
 dependencies {
-    compile 'org.apache.commons:commons-lang3:3.3.2'
-    compile 'org.apache.httpcomponents:httpclient:4.3.6'
-    compile group: 'com.google.guava', name: 'guava', version: '12.0'
-
     compile 'org.projectlombok:lombok:1.16.+'
     compile 'org.slf4j:slf4j-api:1.7.+'
+    compile 'org.apache.commons:commons-lang3:3.3.2'
+    compile 'org.apache.httpcomponents:httpclient:4.3.6'
+    compile 'com.google.guava:guava:12.0'
 
-    testCompile group: 'junit', name: 'junit', version: '4.+'
+    testCompile 'junit:junit:4.+'
     testCompile 'org.mockito:mockito-core:1.+'
     testCompile 'org.slf4j:slf4j-simple:1.7.+'
 }
