@@ -58,7 +58,7 @@ public class ListRecordsResponse implements ArxivResponse {
      * If there are no more pages left, this will return {@link ListRecordsRequest#NONE}.
      */
     public ListRecordsRequest resumption() {
-        if (resumptionToken == null) {
+        if (isBlank(resumptionToken)) {
             return ListRecordsRequest.NONE;
         }
 

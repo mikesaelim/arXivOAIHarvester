@@ -5,7 +5,7 @@ apply plugin: 'maven-publish'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 group = 'io.github.mikesaelim'
-version = '0.1.1'
+version = '0.1.2'
 
 repositories {
     mavenCentral()
@@ -13,15 +13,15 @@ repositories {
 }
 
 dependencies {
-    compile 'org.projectlombok:lombok:1.16.+'
-    compile 'org.slf4j:slf4j-api:1.7.+'
-    compile 'org.apache.commons:commons-lang3:3.3.2'
-    compile 'org.apache.httpcomponents:httpclient:4.3.6'
-    compile 'com.google.guava:guava:12.0'
+    compile 'org.projectlombok:lombok:1.16.8'
+    compile 'org.slf4j:slf4j-api:1.7.21'
+    compile 'org.apache.commons:commons-lang3:3.4'
+    compile 'org.apache.httpcomponents:httpclient:4.5.2'
+    compile 'com.google.guava:guava:19.0'
 
-    testCompile 'junit:junit:4.+'
-    testCompile 'org.mockito:mockito-core:1.+'
-    testCompile 'org.slf4j:slf4j-simple:1.7.+'
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-all:1.10.19'
+    testCompile 'org.slf4j:slf4j-simple:1.7.21'
 }
 
 mainClassName = "io.github.mikesaelim.arxivoaiharvester.CommandLineInterface"
@@ -47,5 +47,5 @@ publishing {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.5'
+    gradleVersion = '2.14'
 }

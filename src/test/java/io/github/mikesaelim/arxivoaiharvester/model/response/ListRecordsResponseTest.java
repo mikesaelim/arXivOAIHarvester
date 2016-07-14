@@ -32,4 +32,16 @@ public class ListRecordsResponseTest {
 
         assertEquals(ListRecordsRequest.NONE, resumption);
     }
+
+    @Test
+    public void testBlankResumption() throws Exception {
+        ListRecordsResponse response = ListRecordsResponse.builder()
+                .resumptionToken("")
+                .build();
+
+        ListRecordsRequest resumption = response.resumption();
+
+        assertEquals(ListRecordsRequest.NONE, resumption);
+    }
+
 }
