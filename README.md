@@ -19,14 +19,30 @@ Informational links:
     * [Formal definition of the OAI protocol](http://www.openarchives.org/OAI/openarchivesprotocol.html)
 
 
-#####Covering my ass
+##### Covering my ass
 
 I mostly designed this library to support a future larger project of mine, and for educational purposes to give me more
 practice coding and designing.  No guarantees on current reliability and future support!  If you prioritize these things,
 I might suggest using one of the more general Java OAI Harvesters out there, which (hopefully) have reached some kind of
 stability.
 
-##Usage
+## Try it out!
+
+I've supplied a `CommandLineInterface` class with an executable `main()` method that executes one request to the arXiv
+OAI repository.  You can run this either by building the jar and running it, or by typing
+
+    ./gradlew run
+    
+in the repository directory.  This should give you a feel for how it all behaves.
+
+## Publishing it locally
+
+While the library is still in development, I haven't yet published its artifacts to a central Maven repository.  Until 
+I do, you can publish the jar locally with
+
+    ./gradlew build publishToMavenLocal
+
+## Usage for development
 
 I strongly recommend reading up on the above links before using this library, because this library will not insulate you
 from all the peculiarities of the OAI protocol.  
@@ -47,12 +63,12 @@ Currently, the implementation of the harvester is blocking and not thread-safe. 
 repository throttles your requests based on your IP, multiple harvesters or threads will end up blocking each other 
 anyway.  In the future, I may rewrite the implementation to queue multiple requests and resolve them asynchronously.
 
-####Importing the library
+#### Importing the library
 
 At this point, while the library is still in development, you can just clone the repo, build a jar, and throw that jar
 into your project.  Once this is ready for release, I will probably host the jar(s) somewhere.
 
-####Preparing the harvester
+#### Preparing the harvester
 
 The simplest preparation is to pass a `CloseableHttpClient` into the constructor:
 
@@ -80,7 +96,7 @@ It is also suggested that you supply "User-Agent" and "From" HTTP headers to ide
     harvester.setUserAgentHeader("Dave's Super Curious Bot, v0.1");
     harvester.setFromHeader("dave@daves.io");
 
-####Retrieving a single record from the repository
+#### Retrieving a single record from the repository
 
 To retrieve a single record by its identifier, construct a `GetRecordRequest` and pass it into the harvester:
 
@@ -96,7 +112,7 @@ by that identifier was found, then `response.getRecord()` will return null.  If 
 request, receiving the response, or parsing the response, the harvester will throw a runtime exception or error - see 
 the javadoc for `ArxivOAIHarvester` for a full list.
 
-####Retrieving a range of records from the repository
+#### Retrieving a range of records from the repository
 
 To retrieve a range of records between two dates, and/or of a specific set, construct a `ListRecordsRequest` and pass it
 into the harvester.  Because many records may be returned, the repository will page the results (usually the pages are
@@ -121,13 +137,3 @@ The resulting `ListRecordsResponse` objects will contain a list of records, if t
 If no records were found in that range and set, then `response.getRecords()` will return an empty list.  If there are 
 any issues sending the request, receiving the response, or parsing the response, the harvester will throw a runtime 
 exception or error - see the javadoc for `ArxivOAIHarvester` for a full list.
-
-## Try it out!
-
-I've supplied a `CommandLineInterface` class with an executable `main()` method that executes one request to the arXiv
-OAI repository.  You can run this either by building the jar and running it, or by typing
-
-    ./gradlew clean run
-    
-in the repository directory.  This should give you a feel for how it all behaves.
-
